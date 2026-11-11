@@ -9,6 +9,7 @@ from app.auth import router as auth_router
 from app.courses import course_router, section_router
 from app.database import initialize_database
 from app.enrollments import router as enrollments_router
+from app.gradebook import router as gradebook_router
 from app.users import router as users_router
 
 
@@ -39,6 +40,7 @@ app.include_router(course_router)
 app.include_router(section_router)
 app.include_router(users_router)
 app.include_router(enrollments_router)
+app.include_router(gradebook_router)
 
 
 @app.get("/api/health", tags=["health"])

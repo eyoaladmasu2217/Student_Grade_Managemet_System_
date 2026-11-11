@@ -104,5 +104,26 @@ def initialize_database() -> None:
 
             CREATE INDEX IF NOT EXISTS enrollments_student_id_idx
                 ON enrollments(student_id, status);
+
+            CREATE TABLE IF NOT EXISTS assessment_categories (
+                id INTEGER PRIMARY KEY,
+                section_id INTEGER NOT NULL REFERENCES sections(id) ON DELETE RESTRICT,
+                name TEXT NOT NULL COLLATE NOCASE,
+                weight REAL NOT NULL CHECK (weight > 0 AND weight <= 100),
+                UNIQUE (section_id, name)
+            );
+
+            CREATE TABLE IF NOT EXISTS assessments (
+                id INTEGER PRIMARY KEY,
+                category_id INTEGER NOT NULL
+                    REFERENCES assessment_categories(id) ON DELETE RESTRICT,
+                title TEXT NOT NULL COLLATE NOCASE,
+                max_points REAL NOT NULL CHECK (max_points > 0),
+                due_date TEXT,
+                UNIQUE (category_id, title)
+            );
+
+            CREATE INDEX IF NOT EXISTS assessments_category_id_idx
+                ON assessments(category_id);
             """
         )
