@@ -416,3 +416,170 @@ def test_category_weights_cannot_exceed_one_hundred_percent(
     )
 
     assert response.status_code == 422
+
+
+def test_weighted_grade_calculation_uses_completed_assessments(
+    client: TestClient,
+    tmp_path,
+) -> None:
+    create_user(client, tmp_path / "test.sqlite3", "admin")
+    instructor_response = client.post(
+        "/api/users",
+        json={
+            "email": "instructor@example.edu",
+            "full_name": "Course Instructor",
+            "password": "a-secure-password",
+            "role": "instructor",
+        },
+    )
+    student_response = client.post(
+        "/api/users",
+        json={
+            "email": "student@example.edu",
+            "full_name": "Student One",
+            "password": "a-secure-password",
+            "role": "student",
+        },
+    )
+    year_response = client.post(
+        "/api/academic-years",
+        json={
+            "name": "2026-2027",
+            "start_date": "2026-09-01",
+            "end_date": "2027-06-30",
+        },
+    )
+    term_response = client.post(
+        f"/api/academic-years/{year_response.json()['id']}/terms",
+        json={
+            "name": "Fall",
+            "start_date": "2026-09-01",
+            "end_date": "2026-12-20",
+        },
+    )
+    course_response = client.post(
+        "/api/courses",
+        json={"code": "CS101", "title": "Introduction to Computing"},
+    )
+    section_response = client.post(
+        f"/api/courses/{course_response.json()['id']}/sections",
+        json={
+            "term_id": term_response.json()["id"],
+            "instructor_id": instructor_response.json()["id"],
+            "section_code": "A",
+        },
+    )
+    section_id = section_response.json()["id"]
+    student_id = student_response.json()["id"]
+    client.post(f"/api/sections/{section_id}/enrollments", json={"student_id": student_id})
+
+    category_ids = []
+    assessment_ids = []
+    for name, weight, assessment_title, max_points in (
+        ("Exams", 60, "Midterm", 100),
+        ("Assignments", 40, "Project", 50),
+    ):
+        category_response = client.post(
+            f"/api/sections/{section_id}/categories",
+            json={"name": name, "weight": weight},
+        )
+        category_ids.append(category_response.json()["id"])
+        assessment_response = client.post(
+            f"/api/categories/{category_response.json()['id']}/assessments",
+            json={"title": assessment_title, "max_points": max_points},
+        )
+        assessment_ids.append(assessment_response.json()["id"])
+
+    client.post(
+        "/api/auth/login",
+        json={"email": "instructor@example.edu", "password": "a-secure-password"},
+    )
+    first_score = client.put(
+        f"/api/assessments/{assessment_ids[0]}/scores/{student_id}",
+        json={"points": 80},
+    )
+    partial_gradebook = client.get(f"/api/sections/{section_id}/gradebook")
+    second_score = client.put(
+        f"/api/assessments/{assessment_ids[1]}/scores/{student_id}",
+        json={"points": 45},
+    )
+    final_gradebook = client.get(f"/api/sections/{section_id}/gradebook")
+
+    assert first_score.status_code == 200
+    assert second_score.status_code == 200
+    assert partial_gradebook.json()["students"][0]["current_percentage"] == 80
+    student_grade = final_gradebook.json()["students"][0]
+    assert student_grade["final_percentage"] == 84
+    assert student_grade["is_complete"] is True
+
+
+def test_score_cannot_exceed_assessment_maximum(client: TestClient, tmp_path) -> None:
+    create_user(client, tmp_path / "test.sqlite3", "admin")
+    instructor_response = client.post(
+        "/api/users",
+        json={
+            "email": "instructor@example.edu",
+            "full_name": "Course Instructor",
+            "password": "a-secure-password",
+            "role": "instructor",
+        },
+    )
+    student_response = client.post(
+        "/api/users",
+        json={
+            "email": "student@example.edu",
+            "full_name": "Student One",
+            "password": "a-secure-password",
+            "role": "student",
+        },
+    )
+    year_response = client.post(
+        "/api/academic-years",
+        json={
+            "name": "2026-2027",
+            "start_date": "2026-09-01",
+            "end_date": "2027-06-30",
+        },
+    )
+    term_response = client.post(
+        f"/api/academic-years/{year_response.json()['id']}/terms",
+        json={
+            "name": "Fall",
+            "start_date": "2026-09-01",
+            "end_date": "2026-12-20",
+        },
+    )
+    course_response = client.post(
+        "/api/courses",
+        json={"code": "CS101", "title": "Introduction to Computing"},
+    )
+    section_response = client.post(
+        f"/api/courses/{course_response.json()['id']}/sections",
+        json={
+            "term_id": term_response.json()["id"],
+            "instructor_id": instructor_response.json()["id"],
+            "section_code": "A",
+        },
+    )
+    section_id = section_response.json()["id"]
+    student_id = student_response.json()["id"]
+    client.post(f"/api/sections/{section_id}/enrollments", json={"student_id": student_id})
+    category_response = client.post(
+        f"/api/sections/{section_id}/categories",
+        json={"name": "Exams", "weight": 100},
+    )
+    assessment_response = client.post(
+        f"/api/categories/{category_response.json()['id']}/assessments",
+        json={"title": "Final", "max_points": 100},
+    )
+    client.post(
+        "/api/auth/login",
+        json={"email": "instructor@example.edu", "password": "a-secure-password"},
+    )
+
+    response = client.put(
+        f"/api/assessments/{assessment_response.json()['id']}/scores/{student_id}",
+        json={"points": 101},
+    )
+
+    assert response.status_code == 422

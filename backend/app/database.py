@@ -125,5 +125,19 @@ def initialize_database() -> None:
 
             CREATE INDEX IF NOT EXISTS assessments_category_id_idx
                 ON assessments(category_id);
+
+            CREATE TABLE IF NOT EXISTS assessment_scores (
+                id INTEGER PRIMARY KEY,
+                assessment_id INTEGER NOT NULL
+                    REFERENCES assessments(id) ON DELETE RESTRICT,
+                student_id INTEGER NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+                points REAL NOT NULL CHECK (points >= 0),
+                updated_by INTEGER NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+                updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+                UNIQUE (assessment_id, student_id)
+            );
+
+            CREATE INDEX IF NOT EXISTS assessment_scores_student_idx
+                ON assessment_scores(student_id);
             """
         )
