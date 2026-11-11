@@ -11,6 +11,7 @@ from app.database import initialize_database
 from app.enrollments import router as enrollments_router
 from app.gradebook import router as gradebook_router
 from app.grade_scale import router as grade_scale_router
+from app.releases import router as releases_router
 from app.scores import router as scores_router
 from app.users import router as users_router
 
@@ -45,6 +46,7 @@ app.include_router(enrollments_router)
 app.include_router(gradebook_router)
 app.include_router(scores_router)
 app.include_router(grade_scale_router)
+app.include_router(releases_router)
 
 
 @app.get("/api/health", tags=["health"])

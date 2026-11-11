@@ -145,6 +145,23 @@ def initialize_database() -> None:
                 minimum_percentage REAL NOT NULL UNIQUE
                     CHECK (minimum_percentage >= 0 AND minimum_percentage <= 100)
             );
+
+            CREATE TABLE IF NOT EXISTS section_releases (
+                section_id INTEGER PRIMARY KEY REFERENCES sections(id) ON DELETE RESTRICT,
+                released_by INTEGER NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+                released_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+            );
+
+            CREATE TABLE IF NOT EXISTS released_grades (
+                section_id INTEGER NOT NULL REFERENCES section_releases(section_id) ON DELETE RESTRICT,
+                student_id INTEGER NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+                percentage REAL NOT NULL CHECK (percentage >= 0 AND percentage <= 100),
+                letter_grade TEXT NOT NULL,
+                PRIMARY KEY (section_id, student_id)
+            );
+
+            CREATE INDEX IF NOT EXISTS released_grades_student_idx
+                ON released_grades(student_id);
             """
         )
         connection.executemany(

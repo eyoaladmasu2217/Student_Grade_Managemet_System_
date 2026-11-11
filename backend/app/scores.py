@@ -80,6 +80,14 @@ def record_score(
     if assessment is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Assessment not found")
     require_category_manager(connection, assessment["category_id"], user)
+    if connection.execute(
+        "SELECT 1 FROM section_releases WHERE section_id = ?",
+        (assessment["section_id"],),
+    ).fetchone():
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Released scores can only be changed through the grade correction workflow",
+        )
 
     if payload.points > assessment["max_points"]:
         raise HTTPException(

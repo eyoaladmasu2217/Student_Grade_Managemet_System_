@@ -618,3 +618,169 @@ def test_grade_scale_must_cover_zero_percent(client: TestClient, tmp_path) -> No
     )
 
     assert response.status_code == 422
+
+
+def test_students_only_see_final_grades_after_instructor_release(
+    client: TestClient,
+    tmp_path,
+) -> None:
+    create_user(client, tmp_path / "test.sqlite3", "admin")
+    instructor_response = client.post(
+        "/api/users",
+        json={
+            "email": "instructor@example.edu",
+            "full_name": "Course Instructor",
+            "password": "a-secure-password",
+            "role": "instructor",
+        },
+    )
+    student_response = client.post(
+        "/api/users",
+        json={
+            "email": "student@example.edu",
+            "full_name": "Student One",
+            "password": "a-secure-password",
+            "role": "student",
+        },
+    )
+    year_response = client.post(
+        "/api/academic-years",
+        json={
+            "name": "2026-2027",
+            "start_date": "2026-09-01",
+            "end_date": "2027-06-30",
+        },
+    )
+    term_response = client.post(
+        f"/api/academic-years/{year_response.json()['id']}/terms",
+        json={
+            "name": "Fall",
+            "start_date": "2026-09-01",
+            "end_date": "2026-12-20",
+        },
+    )
+    course_response = client.post(
+        "/api/courses",
+        json={"code": "CS101", "title": "Introduction to Computing"},
+    )
+    section_response = client.post(
+        f"/api/courses/{course_response.json()['id']}/sections",
+        json={
+            "term_id": term_response.json()["id"],
+            "instructor_id": instructor_response.json()["id"],
+            "section_code": "A",
+        },
+    )
+    section_id = section_response.json()["id"]
+    student_id = student_response.json()["id"]
+    client.post(f"/api/sections/{section_id}/enrollments", json={"student_id": student_id})
+    category_response = client.post(
+        f"/api/sections/{section_id}/categories",
+        json={"name": "Exams", "weight": 100},
+    )
+    assessment_response = client.post(
+        f"/api/categories/{category_response.json()['id']}/assessments",
+        json={"title": "Final", "max_points": 100},
+    )
+    client.post(
+        "/api/auth/login",
+        json={"email": "instructor@example.edu", "password": "a-secure-password"},
+    )
+    client.put(
+        f"/api/assessments/{assessment_response.json()['id']}/scores/{student_id}",
+        json={"points": 92},
+    )
+    client.post(
+        "/api/auth/login",
+        json={"email": "student@example.edu", "password": "a-secure-password"},
+    )
+    unreleased_response = client.get(f"/api/sections/{section_id}/my-grade")
+    assert unreleased_response.status_code == 409
+
+    client.post(
+        "/api/auth/login",
+        json={"email": "instructor@example.edu", "password": "a-secure-password"},
+    )
+    release_response = client.post(f"/api/sections/{section_id}/release")
+    assert release_response.status_code == 200
+    assert release_response.json()["student_count"] == 1
+
+    client.post(
+        "/api/auth/login",
+        json={"email": "student@example.edu", "password": "a-secure-password"},
+    )
+    grade_response = client.get(f"/api/sections/{section_id}/my-grade")
+    all_grades_response = client.get("/api/enrollments/mine/grades")
+
+    assert grade_response.status_code == 200
+    assert grade_response.json()["percentage"] == 92
+    assert grade_response.json()["letter_grade"] == "A"
+    assert len(all_grades_response.json()) == 1
+
+
+def test_instructor_cannot_release_incomplete_gradebook(client: TestClient, tmp_path) -> None:
+    create_user(client, tmp_path / "test.sqlite3", "admin")
+    instructor_response = client.post(
+        "/api/users",
+        json={
+            "email": "instructor@example.edu",
+            "full_name": "Course Instructor",
+            "password": "a-secure-password",
+            "role": "instructor",
+        },
+    )
+    student_response = client.post(
+        "/api/users",
+        json={
+            "email": "student@example.edu",
+            "full_name": "Student One",
+            "password": "a-secure-password",
+            "role": "student",
+        },
+    )
+    year_response = client.post(
+        "/api/academic-years",
+        json={
+            "name": "2026-2027",
+            "start_date": "2026-09-01",
+            "end_date": "2027-06-30",
+        },
+    )
+    term_response = client.post(
+        f"/api/academic-years/{year_response.json()['id']}/terms",
+        json={
+            "name": "Fall",
+            "start_date": "2026-09-01",
+            "end_date": "2026-12-20",
+        },
+    )
+    course_response = client.post(
+        "/api/courses",
+        json={"code": "CS101", "title": "Introduction to Computing"},
+    )
+    section_response = client.post(
+        f"/api/courses/{course_response.json()['id']}/sections",
+        json={
+            "term_id": term_response.json()["id"],
+            "instructor_id": instructor_response.json()["id"],
+            "section_code": "A",
+        },
+    )
+    section_id = section_response.json()["id"]
+    client.post(f"/api/sections/{section_id}/enrollments", json={"student_id": student_response.json()["id"]})
+    category_response = client.post(
+        f"/api/sections/{section_id}/categories",
+        json={"name": "Exams", "weight": 100},
+    )
+    client.post(
+        f"/api/categories/{category_response.json()['id']}/assessments",
+        json={"title": "Final", "max_points": 100},
+    )
+    client.post(
+        "/api/auth/login",
+        json={"email": "instructor@example.edu", "password": "a-secure-password"},
+    )
+
+    response = client.post(f"/api/sections/{section_id}/release")
+
+    assert response.status_code == 422
