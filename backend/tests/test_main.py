@@ -130,3 +130,60 @@ def test_term_dates_must_be_within_academic_year(client: TestClient, tmp_path) -
     )
 
     assert response.status_code == 422
+
+
+def test_admin_can_create_course_section(client: TestClient, tmp_path) -> None:
+    create_user(client, tmp_path / "test.sqlite3", "admin")
+    with sqlite3.connect(tmp_path / "test.sqlite3") as connection:
+        connection.execute(
+            "INSERT INTO users (email, full_name, password_hash, role) VALUES (?, ?, ?, ?)",
+            ("instructor@example.edu", "Course Instructor", hash_password("a-secure-password"), "instructor"),
+        )
+        instructor_id = connection.execute(
+            "SELECT id FROM users WHERE email = ?",
+            ("instructor@example.edu",),
+        ).fetchone()[0]
+
+    year_response = client.post(
+        "/api/academic-years",
+        json={
+            "name": "2026-2027",
+            "start_date": "2026-09-01",
+            "end_date": "2027-06-30",
+        },
+    )
+    term_response = client.post(
+        f"/api/academic-years/{year_response.json()['id']}/terms",
+        json={
+            "name": "Fall",
+            "start_date": "2026-09-01",
+            "end_date": "2026-12-20",
+        },
+    )
+    course_response = client.post(
+        "/api/courses",
+        json={"code": "cs101", "title": "Introduction to Computing"},
+    )
+
+    assert course_response.status_code == 201
+    assert course_response.json()["code"] == "CS101"
+    section_response = client.post(
+        f"/api/courses/{course_response.json()['id']}/sections",
+        json={
+            "term_id": term_response.json()["id"],
+            "instructor_id": instructor_id,
+            "section_code": "a",
+        },
+    )
+
+    assert section_response.status_code == 201
+    assert section_response.json()["section_code"] == "A"
+    assert section_response.json()["instructor_name"] == "Course Instructor"
+
+
+def test_instructor_only_lists_assigned_sections(client: TestClient, tmp_path) -> None:
+    create_user(client, tmp_path / "test.sqlite3", "instructor")
+    response = client.get("/api/sections")
+
+    assert response.status_code == 200
+    assert response.json() == []

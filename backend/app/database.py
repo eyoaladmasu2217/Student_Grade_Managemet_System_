@@ -73,5 +73,24 @@ def initialize_database() -> None:
 
             CREATE INDEX IF NOT EXISTS terms_academic_year_idx
                 ON terms(academic_year_id);
+
+            CREATE TABLE IF NOT EXISTS courses (
+                id INTEGER PRIMARY KEY,
+                code TEXT NOT NULL UNIQUE COLLATE NOCASE,
+                title TEXT NOT NULL,
+                description TEXT NOT NULL DEFAULT ''
+            );
+
+            CREATE TABLE IF NOT EXISTS sections (
+                id INTEGER PRIMARY KEY,
+                course_id INTEGER NOT NULL REFERENCES courses(id) ON DELETE RESTRICT,
+                term_id INTEGER NOT NULL REFERENCES terms(id) ON DELETE RESTRICT,
+                instructor_id INTEGER NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+                section_code TEXT NOT NULL,
+                UNIQUE (course_id, term_id, section_code)
+            );
+
+            CREATE INDEX IF NOT EXISTS sections_term_id_idx ON sections(term_id);
+            CREATE INDEX IF NOT EXISTS sections_instructor_id_idx ON sections(instructor_id);
             """
         )
