@@ -1,3 +1,4 @@
+from contextlib import closing
 import sqlite3
 
 import pytest
@@ -22,11 +23,12 @@ def test_health_check(client: TestClient) -> None:
 
 
 def test_login_sets_http_only_session_cookie(client: TestClient, tmp_path) -> None:
-    with sqlite3.connect(tmp_path / "test.sqlite3") as connection:
+    with closing(sqlite3.connect(tmp_path / "test.sqlite3")) as connection:
         connection.execute(
             "INSERT INTO users (email, full_name, password_hash, role) VALUES (?, ?, ?, ?)",
             ("teacher@example.edu", "Teacher", hash_password("a-secure-password"), "instructor"),
         )
+        connection.commit()
 
     response = client.post(
         "/api/auth/login",
@@ -40,11 +42,12 @@ def test_login_sets_http_only_session_cookie(client: TestClient, tmp_path) -> No
 
 
 def test_login_rejects_wrong_password(client: TestClient, tmp_path) -> None:
-    with sqlite3.connect(tmp_path / "test.sqlite3") as connection:
+    with closing(sqlite3.connect(tmp_path / "test.sqlite3")) as connection:
         connection.execute(
             "INSERT INTO users (email, full_name, password_hash, role) VALUES (?, ?, ?, ?)",
             ("teacher@example.edu", "Teacher", hash_password("a-secure-password"), "instructor"),
         )
+        connection.commit()
 
     response = client.post(
         "/api/auth/login",
@@ -54,12 +57,43 @@ def test_login_rejects_wrong_password(client: TestClient, tmp_path) -> None:
     assert response.status_code == 401
 
 
+def test_password_change_revokes_old_credentials(client: TestClient, tmp_path) -> None:
+    create_user(client, tmp_path / "test.sqlite3", "instructor")
+
+    response = client.post(
+        "/api/auth/change-password",
+        json={
+            "current_password": "a-secure-password",
+            "new_password": "a-different-secure-password",
+        },
+    )
+    assert response.status_code == 200
+    assert client.get("/api/auth/me").status_code == 200
+    client.post("/api/auth/logout")
+
+    old_password_response = client.post(
+        "/api/auth/login",
+        json={"email": "instructor@example.edu", "password": "a-secure-password"},
+    )
+    new_password_response = client.post(
+        "/api/auth/login",
+        json={
+            "email": "instructor@example.edu",
+            "password": "a-different-secure-password",
+        },
+    )
+
+    assert old_password_response.status_code == 401
+    assert new_password_response.status_code == 200
+
+
 def create_user(client: TestClient, db_path, role: str) -> None:
-    with sqlite3.connect(db_path) as connection:
+    with closing(sqlite3.connect(db_path)) as connection:
         connection.execute(
             "INSERT INTO users (email, full_name, password_hash, role) VALUES (?, ?, ?, ?)",
             (f"{role}@example.edu", role.title(), hash_password("a-secure-password"), role),
         )
+        connection.commit()
     response = client.post(
         "/api/auth/login",
         json={"email": f"{role}@example.edu", "password": "a-secure-password"},
@@ -134,7 +168,7 @@ def test_term_dates_must_be_within_academic_year(client: TestClient, tmp_path) -
 
 def test_admin_can_create_course_section(client: TestClient, tmp_path) -> None:
     create_user(client, tmp_path / "test.sqlite3", "admin")
-    with sqlite3.connect(tmp_path / "test.sqlite3") as connection:
+    with closing(sqlite3.connect(tmp_path / "test.sqlite3")) as connection:
         connection.execute(
             "INSERT INTO users (email, full_name, password_hash, role) VALUES (?, ?, ?, ?)",
             ("instructor@example.edu", "Course Instructor", hash_password("a-secure-password"), "instructor"),
@@ -143,6 +177,7 @@ def test_admin_can_create_course_section(client: TestClient, tmp_path) -> None:
             "SELECT id FROM users WHERE email = ?",
             ("instructor@example.edu",),
         ).fetchone()[0]
+        connection.commit()
 
     year_response = client.post(
         "/api/academic-years",

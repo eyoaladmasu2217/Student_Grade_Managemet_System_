@@ -3,6 +3,7 @@ import { ApiError, apiRequest, User } from "./api";
 import AdminDashboard from "./AdminDashboard";
 import InstructorDashboard from "./InstructorDashboard";
 import LoginPage from "./LoginPage";
+import PasswordChangeForm from "./PasswordChangeForm";
 import StudentDashboard from "./StudentDashboard";
 
 type SessionState = "loading" | "signed-out" | "signed-in" | "unavailable";
@@ -11,6 +12,8 @@ export default function App() {
   const [user, setUser] = useState<User | null>(null);
   const [sessionState, setSessionState] = useState<SessionState>("loading");
   const [error, setError] = useState("");
+  const [changingPassword, setChangingPassword] = useState(false);
+  const [accountMessage, setAccountMessage] = useState("");
 
   useEffect(() => {
     let active = true;
@@ -98,11 +101,30 @@ export default function App() {
             <strong>{user.full_name}</strong>
             <small>{user.role.replace("_", " ")}</small>
           </span>
+          <button
+            className="secondary-button"
+            onClick={() => {
+              setAccountMessage("");
+              setChangingPassword((isOpen) => !isOpen);
+            }}
+          >
+            Change password
+          </button>
           <button className="secondary-button" onClick={signOut}>Sign out</button>
         </div>
       </header>
 
       {error && <p className="form-error global-error" role="alert">{error}</p>}
+      {accountMessage && <p className="success-message global-error" role="status">{accountMessage}</p>}
+      {changingPassword && (
+        <PasswordChangeForm
+          onCancel={() => setChangingPassword(false)}
+          onComplete={() => {
+            setChangingPassword(false);
+            setAccountMessage("Password updated. Other active sessions have been signed out.");
+          }}
+        />
+      )}
       {user.role === "admin" && <AdminDashboard />}
       {user.role === "instructor" && <InstructorDashboard />}
       {user.role === "student" && <StudentDashboard />}

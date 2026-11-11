@@ -637,6 +637,30 @@ textarea:focus {
   margin: 50px 0;
 }
 
+.password-panel {
+  margin-top: 20px;
+}
+
+.password-form {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: end;
+  gap: 12px;
+}
+
+.password-form label {
+  display: grid;
+  gap: 7px;
+  color: #40506a;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.password-form .form-error,
+.password-form .button-row {
+  grid-column: 1 / -1;
+}
+
 .section-picker {
   display: grid;
   min-width: min(320px, 100%);
@@ -913,5 +937,9 @@ textarea:focus {
 
   .panel {
     padding: 18px;
+  }
+
+  .password-form {
+    grid-template-columns: 1fr;
   }
 }

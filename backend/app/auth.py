@@ -14,9 +14,36 @@ SESSION_COOKIE = "sgms_session"
 SESSION_DURATION = timedelta(hours=12)
 
 
+def set_session_cookie(response: Response, token: str) -> None:
+    response.set_cookie(
+        key=SESSION_COOKIE,
+        value=token,
+        httponly=True,
+        secure=os.getenv("SGMS_COOKIE_SECURE", "false").lower() == "true",
+        samesite="lax",
+        max_age=int(SESSION_DURATION.total_seconds()),
+        path="/",
+    )
+
+
+def clear_session_cookie(response: Response) -> None:
+    response.delete_cookie(
+        key=SESSION_COOKIE,
+        path="/",
+        httponly=True,
+        secure=os.getenv("SGMS_COOKIE_SECURE", "false").lower() == "true",
+        samesite="lax",
+    )
+
+
 class LoginRequest(BaseModel):
     email: EmailStr
     password: str = Field(min_length=1, max_length=256)
+
+
+class ChangePasswordRequest(BaseModel):
+    current_password: str = Field(min_length=1, max_length=256)
+    new_password: str = Field(min_length=12, max_length=128)
 
 
 class UserResponse(BaseModel):
@@ -91,15 +118,7 @@ def login(
         (user["id"], hash_session_token(token), expires_at.isoformat()),
     )
     connection.commit()
-    response.set_cookie(
-        key=SESSION_COOKIE,
-        value=token,
-        httponly=True,
-        secure=os.getenv("SGMS_COOKIE_SECURE", "false").lower() == "true",
-        samesite="lax",
-        max_age=int(SESSION_DURATION.total_seconds()),
-        path="/",
-    )
+    set_session_cookie(response, token)
     return UserResponse(
         id=user["id"],
         email=user["email"],
@@ -108,7 +127,12 @@ def login(
     )
 
 
-@router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
+@router.post(
+    "/logout",
+    status_code=status.HTTP_204_NO_CONTENT,
+    response_class=Response,
+    response_model=None,
+)
 def logout(
     request: Request,
     response: Response,
@@ -121,13 +145,59 @@ def logout(
             (hash_session_token(token),),
         )
         connection.commit()
-    response.delete_cookie(key=SESSION_COOKIE, path="/", httponly=True, samesite="lax")
+    clear_session_cookie(response)
 
 
 @router.get("/me", response_model=UserResponse)
 def current_user(
     user: Annotated[sqlite3.Row, Depends(get_current_user)],
 ) -> UserResponse:
+    return UserResponse(
+        id=user["id"],
+        email=user["email"],
+        full_name=user["full_name"],
+        role=user["role"],
+    )
+
+
+@router.post("/change-password", response_model=UserResponse)
+def change_password(
+    payload: ChangePasswordRequest,
+    response: Response,
+    user: Annotated[sqlite3.Row, Depends(get_current_user)],
+    connection: Annotated[sqlite3.Connection, Depends(get_db)],
+) -> UserResponse:
+    connection.execute("BEGIN IMMEDIATE")
+    account = connection.execute(
+        "SELECT password_hash FROM users WHERE id = ? AND is_active = 1",
+        (user["id"],),
+    ).fetchone()
+    if account is None or not verify_password(
+        payload.current_password, account["password_hash"]
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Current password is incorrect",
+        )
+    if verify_password(payload.new_password, account["password_hash"]):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="New password must be different from the current password",
+        )
+
+    token = create_session_token()
+    expires_at = datetime.now(timezone.utc) + SESSION_DURATION
+    connection.execute(
+        "UPDATE users SET password_hash = ? WHERE id = ?",
+        (hash_password(payload.new_password), user["id"]),
+    )
+    connection.execute("DELETE FROM sessions WHERE user_id = ?", (user["id"],))
+    connection.execute(
+        "INSERT INTO sessions (user_id, token_hash, expires_at) VALUES (?, ?, ?)",
+        (user["id"], hash_session_token(token), expires_at.isoformat()),
+    )
+    connection.commit()
+    set_session_cookie(response, token)
     return UserResponse(
         id=user["id"],
         email=user["email"],

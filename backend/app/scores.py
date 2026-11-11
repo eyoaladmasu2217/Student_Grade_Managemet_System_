@@ -82,6 +82,14 @@ def record_score(
     if assessment is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Assessment not found")
     require_category_manager(connection, assessment["category_id"], user)
+
+    if payload.points > assessment["max_points"]:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"Score cannot exceed {assessment['max_points']} points",
+        )
+
+    connection.execute("BEGIN IMMEDIATE")
     if connection.execute(
         "SELECT 1 FROM section_releases WHERE section_id = ?",
         (assessment["section_id"],),
@@ -89,12 +97,6 @@ def record_score(
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="Released scores can only be changed through the grade correction workflow",
-        )
-
-    if payload.points > assessment["max_points"]:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=f"Score cannot exceed {assessment['max_points']} points",
         )
 
     enrollment = connection.execute(

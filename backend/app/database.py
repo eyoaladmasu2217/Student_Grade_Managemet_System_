@@ -1,6 +1,7 @@
 import os
 import sqlite3
 from collections.abc import Iterator
+from contextlib import closing
 from pathlib import Path
 
 DATABASE_PATH = Path(
@@ -13,7 +14,7 @@ DATABASE_PATH = Path(
 
 def connect() -> sqlite3.Connection:
     DATABASE_PATH.parent.mkdir(parents=True, exist_ok=True)
-    connection = sqlite3.connect(DATABASE_PATH, timeout=10)
+    connection = sqlite3.connect(DATABASE_PATH, timeout=10, check_same_thread=False)
     connection.row_factory = sqlite3.Row
     connection.execute("PRAGMA foreign_keys = ON")
     return connection
@@ -28,7 +29,7 @@ def get_db() -> Iterator[sqlite3.Connection]:
 
 
 def initialize_database() -> None:
-    with connect() as connection:
+    with closing(connect()) as connection:
         connection.executescript(
             """
             CREATE TABLE IF NOT EXISTS users (
@@ -54,7 +55,7 @@ def initialize_database() -> None:
 
             CREATE TABLE IF NOT EXISTS academic_years (
                 id INTEGER PRIMARY KEY,
-                name TEXT NOT NULL UNIQUE,
+                name TEXT NOT NULL UNIQUE COLLATE NOCASE,
                 start_date TEXT NOT NULL,
                 end_date TEXT NOT NULL,
                 CHECK (start_date <= end_date)
@@ -64,7 +65,7 @@ def initialize_database() -> None:
                 id INTEGER PRIMARY KEY,
                 academic_year_id INTEGER NOT NULL
                     REFERENCES academic_years(id) ON DELETE RESTRICT,
-                name TEXT NOT NULL,
+                name TEXT NOT NULL COLLATE NOCASE,
                 start_date TEXT NOT NULL,
                 end_date TEXT NOT NULL,
                 CHECK (start_date <= end_date),
@@ -190,3 +191,4 @@ def initialize_database() -> None:
             """,
             [("A", 90), ("B", 80), ("C", 70), ("D", 60), ("F", 0)],
         )
+        connection.commit()

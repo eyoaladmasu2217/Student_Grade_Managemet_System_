@@ -18,6 +18,7 @@ python -m uvicorn app.main:app --reload
 ```
 
 The API is available at `http://localhost:8000`; its initial health check is `http://localhost:8000/api/health`.
+The interactive API reference is available at `http://localhost:8000/docs`. SQLite data is stored in `backend/data/gradebook.sqlite3` by default; set `SGMS_DATABASE_PATH` to use another file.
 
 Create an initial administrator account in another terminal from `backend/`:
 
@@ -28,6 +29,10 @@ python -m app.create_user --email admin@bitscollege.edu.et --name "Academic Admi
 The command prompts for a password and requires at least 12 characters. For production, set `SGMS_COOKIE_SECURE=true` so the session cookie is sent only over HTTPS.
 
 The starter grade scale is `A` (90%), `B` (80%), `C` (70%), `D` (60%), and `F` (0%). An administrator can replace it through `PUT /api/grade-scale`; confirm BITS College's official thresholds before using the starter scale for academic decisions.
+
+An instructor can release grades only after every active student has a score for every assessment and category weights total 100%. Unreleased work is treated as ungraded; it does not count as zero. After release, assessment structure is locked. Corrections require a reason and are retained in the section's correction history.
+
+For deployments where the browser calls the API from a different origin, set `SGMS_FRONTEND_ORIGINS` to a comma-separated allowlist. Production deployments must use HTTPS and set `SGMS_COOKIE_SECURE=true`.
 
 ## Run the frontend
 

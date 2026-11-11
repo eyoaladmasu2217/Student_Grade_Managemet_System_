@@ -221,6 +221,7 @@ export default function InstructorDashboard() {
           body: jsonBody(payload),
         }),
       "Assessment category created.",
+      event.currentTarget,
     );
   }
 
@@ -241,15 +242,21 @@ export default function InstructorDashboard() {
           body: jsonBody(payload),
         }),
       "Assessment created.",
+      event.currentTarget,
     );
   }
 
-  async function submit(action: () => Promise<unknown>, successMessage: string) {
+  async function submit(
+    action: () => Promise<unknown>,
+    successMessage: string,
+    form?: HTMLFormElement,
+  ) {
     setError("");
     setMessage("");
     setWorking(true);
     try {
       await action();
+      form?.reset();
       setMessage(successMessage);
       refresh();
     } catch (submitError) {

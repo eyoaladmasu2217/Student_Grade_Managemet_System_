@@ -3,7 +3,7 @@ from datetime import date
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 from app.auth import get_current_user, require_roles
 from app.database import get_db
@@ -25,6 +25,14 @@ class DateRangeInput(BaseModel):
 class AcademicYearCreate(DateRangeInput):
     name: str = Field(min_length=1, max_length=80)
 
+    @field_validator("name")
+    @classmethod
+    def normalize_name(cls, value: str) -> str:
+        normalized = value.strip()
+        if not normalized:
+            raise ValueError("Academic year name cannot be blank")
+        return normalized
+
 
 class AcademicYearResponse(BaseModel):
     id: int
@@ -35,6 +43,14 @@ class AcademicYearResponse(BaseModel):
 
 class TermCreate(DateRangeInput):
     name: str = Field(min_length=1, max_length=80)
+
+    @field_validator("name")
+    @classmethod
+    def normalize_name(cls, value: str) -> str:
+        normalized = value.strip()
+        if not normalized:
+            raise ValueError("Term name cannot be blank")
+        return normalized
 
 
 class TermResponse(BaseModel):

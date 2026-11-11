@@ -1,3 +1,4 @@
+import os
 from contextlib import asynccontextmanager
 from collections.abc import AsyncIterator
 
@@ -16,6 +17,15 @@ from app.releases import router as releases_router
 from app.scores import router as scores_router
 from app.users import router as users_router
 
+frontend_origins = [
+    origin.strip()
+    for origin in os.getenv(
+        "SGMS_FRONTEND_ORIGINS",
+        "http://localhost:5173,http://127.0.0.1:5173",
+    ).split(",")
+    if origin.strip()
+]
+
 
 @asynccontextmanager
 async def lifespan(_: FastAPI) -> AsyncIterator[None]:
@@ -32,7 +42,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=frontend_origins,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
     allow_headers=["Authorization", "Content-Type"],

@@ -83,13 +83,16 @@ export default function AdminDashboard() {
     event: FormEvent<HTMLFormElement>,
     action: () => Promise<unknown>,
     successMessage: string,
+    resetForm = true,
   ) {
+    const form = event.currentTarget;
     event.preventDefault();
     setError("");
     setMessage("");
     setWorking(true);
     try {
       await action();
+      if (resetForm) form.reset();
       setMessage(successMessage);
       setRefreshKey((key) => key + 1);
     } catch (saveError) {
@@ -204,6 +207,7 @@ export default function AdminDashboard() {
           body: jsonBody({ bands: data.gradeBands }),
         }),
       "Grade scale saved.",
+      false,
     );
   }
 
@@ -330,7 +334,7 @@ export default function AdminDashboard() {
             <button className="primary-button" disabled={working}>Create account</button>
           </form>
           <p className="panel-note">
-          Accounts are not self-registered. Deliver account credentials to each user securely.
+            Accounts are not self-registered. Deliver account credentials to each user securely.
           </p>
           <ul className="record-list">
             {data.users.slice(0, 5).map((user) => (
@@ -339,7 +343,7 @@ export default function AdminDashboard() {
                 <span>{user.role} · {user.email}</span>
               </li>
             ))}
-            {data.users.length === 0 &&             <li className="empty-state">No accounts yet.</li>}
+            {data.users.length === 0 && <li className="empty-state">No accounts yet.</li>}
           </ul>
         </article>
 

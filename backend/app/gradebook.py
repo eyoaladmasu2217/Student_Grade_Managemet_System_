@@ -139,8 +139,8 @@ def create_category(
     connection: Annotated[sqlite3.Connection, Depends(get_db)],
 ) -> CategoryResponse:
     require_section_manager(connection, section_id, user)
-    require_gradebook_unreleased(connection, section_id)
     connection.execute("BEGIN IMMEDIATE")
+    require_gradebook_unreleased(connection, section_id)
     total_weight = connection.execute(
         "SELECT COALESCE(SUM(weight), 0) AS total FROM assessment_categories WHERE section_id = ?",
         (section_id,),
@@ -186,8 +186,8 @@ def update_category_weight(
     connection: Annotated[sqlite3.Connection, Depends(get_db)],
 ) -> CategoryResponse:
     category = require_category_manager(connection, category_id, user)
-    require_gradebook_unreleased(connection, category["section_id"])
     connection.execute("BEGIN IMMEDIATE")
+    require_gradebook_unreleased(connection, category["section_id"])
     other_weight = connection.execute(
         """
         SELECT COALESCE(SUM(weight), 0) AS total
@@ -252,6 +252,7 @@ def create_assessment(
     connection: Annotated[sqlite3.Connection, Depends(get_db)],
 ) -> AssessmentResponse:
     category = require_category_manager(connection, category_id, user)
+    connection.execute("BEGIN IMMEDIATE")
     require_gradebook_unreleased(connection, category["section_id"])
     try:
         cursor = connection.execute(
