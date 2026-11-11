@@ -784,3 +784,103 @@ def test_instructor_cannot_release_incomplete_gradebook(client: TestClient, tmp_
     response = client.post(f"/api/sections/{section_id}/release")
 
     assert response.status_code == 422
+
+
+def test_released_grade_correction_updates_result_and_records_audit(
+    client: TestClient,
+    tmp_path,
+) -> None:
+    create_user(client, tmp_path / "test.sqlite3", "admin")
+    instructor_response = client.post(
+        "/api/users",
+        json={
+            "email": "instructor@example.edu",
+            "full_name": "Course Instructor",
+            "password": "a-secure-password",
+            "role": "instructor",
+        },
+    )
+    student_response = client.post(
+        "/api/users",
+        json={
+            "email": "student@example.edu",
+            "full_name": "Student One",
+            "password": "a-secure-password",
+            "role": "student",
+        },
+    )
+    year_response = client.post(
+        "/api/academic-years",
+        json={
+            "name": "2026-2027",
+            "start_date": "2026-09-01",
+            "end_date": "2027-06-30",
+        },
+    )
+    term_response = client.post(
+        f"/api/academic-years/{year_response.json()['id']}/terms",
+        json={
+            "name": "Fall",
+            "start_date": "2026-09-01",
+            "end_date": "2026-12-20",
+        },
+    )
+    course_response = client.post(
+        "/api/courses",
+        json={"code": "CS101", "title": "Introduction to Computing"},
+    )
+    section_response = client.post(
+        f"/api/courses/{course_response.json()['id']}/sections",
+        json={
+            "term_id": term_response.json()["id"],
+            "instructor_id": instructor_response.json()["id"],
+            "section_code": "A",
+        },
+    )
+    section_id = section_response.json()["id"]
+    student_id = student_response.json()["id"]
+    client.post(f"/api/sections/{section_id}/enrollments", json={"student_id": student_id})
+    category_response = client.post(
+        f"/api/sections/{section_id}/categories",
+        json={"name": "Exams", "weight": 100},
+    )
+    assessment_response = client.post(
+        f"/api/categories/{category_response.json()['id']}/assessments",
+        json={"title": "Final", "max_points": 100},
+    )
+    assessment_id = assessment_response.json()["id"]
+    client.post(
+        "/api/auth/login",
+        json={"email": "instructor@example.edu", "password": "a-secure-password"},
+    )
+    client.put(
+        f"/api/assessments/{assessment_id}/scores/{student_id}",
+        json={"points": 92},
+    )
+    client.post(f"/api/sections/{section_id}/release")
+
+    blocked_update = client.put(
+        f"/api/assessments/{assessment_id}/scores/{student_id}",
+        json={"points": 80},
+    )
+    correction_response = client.put(
+        f"/api/assessments/{assessment_id}/scores/{student_id}/correction",
+        json={"points": 80, "reason": "The original score was entered incorrectly"},
+    )
+    history_response = client.get(f"/api/sections/{section_id}/corrections")
+    client.post(
+        "/api/auth/login",
+        json={"email": "student@example.edu", "password": "a-secure-password"},
+    )
+    updated_grade = client.get(f"/api/sections/{section_id}/my-grade")
+
+    assert blocked_update.status_code == 409
+    assert correction_response.status_code == 200
+    assert correction_response.json()["previous_points"] == 92
+    assert correction_response.json()["new_points"] == 80
+    assert correction_response.json()["previous_percentage"] == 92
+    assert correction_response.json()["new_percentage"] == 80
+    assert correction_response.json()["reason"] == "The original score was entered incorrectly"
+    assert len(history_response.json()) == 1
+    assert updated_grade.status_code == 200
+    assert updated_grade.json()["percentage"] == 80

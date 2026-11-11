@@ -162,6 +162,25 @@ def initialize_database() -> None:
 
             CREATE INDEX IF NOT EXISTS released_grades_student_idx
                 ON released_grades(student_id);
+
+            CREATE TABLE IF NOT EXISTS grade_corrections (
+                id INTEGER PRIMARY KEY,
+                section_id INTEGER NOT NULL REFERENCES sections(id) ON DELETE RESTRICT,
+                student_id INTEGER NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+                assessment_id INTEGER NOT NULL REFERENCES assessments(id) ON DELETE RESTRICT,
+                previous_points REAL NOT NULL,
+                new_points REAL NOT NULL,
+                previous_percentage REAL NOT NULL,
+                new_percentage REAL NOT NULL,
+                previous_letter_grade TEXT NOT NULL,
+                new_letter_grade TEXT NOT NULL,
+                changed_by INTEGER NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+                reason TEXT NOT NULL,
+                changed_at TEXT NOT NULL
+            );
+
+            CREATE INDEX IF NOT EXISTS grade_corrections_section_idx
+                ON grade_corrections(section_id, changed_at DESC);
             """
         )
         connection.executemany(
