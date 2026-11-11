@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { ApiError, apiRequest, User } from "./api";
+import AdminDashboard from "./AdminDashboard";
 import LoginPage from "./LoginPage";
 
 type SessionState = "loading" | "signed-out" | "signed-in" | "unavailable";
@@ -100,21 +101,19 @@ export default function App() {
       </header>
 
       {error && <p className="form-error global-error" role="alert">{error}</p>}
-      <section className="welcome">
-        <p className="eyebrow">STUDENT GRADE MANAGEMENT</p>
-        <h1>Every course. Every learner. One clear picture.</h1>
-        <p className="welcome-copy">
-          A focused workspace for course sections, assessments, and student
-          results at BITS College.
-        </p>
-      </section>
-      <section className="workspace">
-        <p className="eyebrow">SIGNED IN AS {user.role.toUpperCase()}</p>
-        <h2>Your academic workspace is ready</h2>
-        <p className="welcome-copy">
-          The grade management features for your role are being connected.
-        </p>
-      </section>
+      {user.role === "admin" ? (
+        <AdminDashboard />
+      ) : (
+        <section className="workspace role-placeholder">
+          <p className="eyebrow">SIGNED IN AS {user.role.toUpperCase()}</p>
+          <h1>{user.role === "instructor" ? "Your teaching workspace" : "Your grades"}</h1>
+          <p className="welcome-copy">
+            {user.role === "instructor"
+              ? "Your section gradebooks will appear here."
+              : "Released course grades will appear here."}
+          </p>
+        </section>
+      )}
     </main>
   );
 }

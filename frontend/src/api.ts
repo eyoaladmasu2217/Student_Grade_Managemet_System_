@@ -7,6 +7,46 @@ export interface User {
   role: UserRole;
 }
 
+export interface AcademicYear {
+  id: number;
+  name: string;
+  start_date: string;
+  end_date: string;
+}
+
+export interface Term {
+  id: number;
+  academic_year_id: number;
+  name: string;
+  start_date: string;
+  end_date: string;
+}
+
+export interface Course {
+  id: number;
+  code: string;
+  title: string;
+  description: string;
+}
+
+export interface Section {
+  id: number;
+  course_id: number;
+  course_code: string;
+  course_title: string;
+  term_id: number;
+  term_name: string;
+  academic_year_id: number;
+  instructor_id: number;
+  instructor_name: string;
+  section_code: string;
+}
+
+export interface GradeBand {
+  code: string;
+  minimum_percentage: number;
+}
+
 export class ApiError extends Error {
   constructor(
     message: string,

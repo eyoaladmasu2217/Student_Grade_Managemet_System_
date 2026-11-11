@@ -52,6 +52,8 @@ class StudentGradebookRow(BaseModel):
 
 class GradebookResponse(BaseModel):
     section_id: int
+    grades_released: bool
+    released_at: str | None
     assessments: list[AssessmentInGradebook]
     students: list[StudentGradebookRow]
 
@@ -145,6 +147,10 @@ def get_gradebook(
     connection: Annotated[sqlite3.Connection, Depends(get_db)],
 ) -> GradebookResponse:
     require_section_manager(connection, section_id, user)
+    release = connection.execute(
+        "SELECT released_at FROM section_releases WHERE section_id = ?",
+        (section_id,),
+    ).fetchone()
     assessments = connection.execute(
         """
         SELECT assessments.id, assessments.category_id,
@@ -206,6 +212,8 @@ def get_gradebook(
 
     return GradebookResponse(
         section_id=section_id,
+        grades_released=release is not None,
+        released_at=release["released_at"] if release else None,
         assessments=assessment_responses,
         students=grade_rows,
     )
