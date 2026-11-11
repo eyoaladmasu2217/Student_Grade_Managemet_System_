@@ -27,6 +27,8 @@ python -m app.create_user --email admin@bitscollege.edu.et --name "Academic Admi
 
 The command prompts for a password and requires at least 12 characters. For production, set `SGMS_COOKIE_SECURE=true` so the session cookie is sent only over HTTPS.
 
+The starter grade scale is `A` (90%), `B` (80%), `C` (70%), `D` (60%), and `F` (0%). An administrator can replace it through `PUT /api/grade-scale`; confirm BITS College's official thresholds before using the starter scale for academic decisions.
+
 ## Run the frontend
 
 In another terminal:

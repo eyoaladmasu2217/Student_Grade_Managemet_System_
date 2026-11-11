@@ -510,6 +510,7 @@ def test_weighted_grade_calculation_uses_completed_assessments(
     assert partial_gradebook.json()["students"][0]["current_percentage"] == 80
     student_grade = final_gradebook.json()["students"][0]
     assert student_grade["final_percentage"] == 84
+    assert student_grade["letter_grade"] == "B"
     assert student_grade["is_complete"] is True
 
 
@@ -580,6 +581,40 @@ def test_score_cannot_exceed_assessment_maximum(client: TestClient, tmp_path) ->
     response = client.put(
         f"/api/assessments/{assessment_response.json()['id']}/scores/{student_id}",
         json={"points": 101},
+    )
+
+    assert response.status_code == 422
+
+
+def test_admin_can_configure_grade_scale(client: TestClient, tmp_path) -> None:
+    create_user(client, tmp_path / "test.sqlite3", "admin")
+
+    response = client.put(
+        "/api/grade-scale",
+        json={
+            "bands": [
+                {"code": "HD", "minimum_percentage": 85},
+                {"code": "P", "minimum_percentage": 50},
+                {"code": "F", "minimum_percentage": 0},
+            ]
+        },
+    )
+
+    assert response.status_code == 200
+    assert [band["code"] for band in response.json()] == ["HD", "P", "F"]
+
+
+def test_grade_scale_must_cover_zero_percent(client: TestClient, tmp_path) -> None:
+    create_user(client, tmp_path / "test.sqlite3", "admin")
+
+    response = client.put(
+        "/api/grade-scale",
+        json={
+            "bands": [
+                {"code": "A", "minimum_percentage": 90},
+                {"code": "B", "minimum_percentage": 60},
+            ]
+        },
     )
 
     assert response.status_code == 422

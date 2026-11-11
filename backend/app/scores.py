@@ -9,6 +9,7 @@ from app.auth import get_current_user
 from app.database import get_db
 from app.grade_math import calculate_grade_for_student
 from app.gradebook import require_category_manager, require_section_manager
+from app.grade_scale import letter_grade_for
 
 router = APIRouter(tags=["scores"])
 
@@ -45,6 +46,7 @@ class StudentGradebookRow(BaseModel):
     graded_weight: float
     current_percentage: float | None
     final_percentage: float | None
+    letter_grade: str | None
     is_complete: bool
 
 
@@ -189,6 +191,7 @@ def get_gradebook(
                 graded_weight=summary.graded_weight,
                 current_percentage=summary.current_percentage,
                 final_percentage=summary.final_percentage,
+                letter_grade=letter_grade_for(connection, summary.final_percentage),
                 is_complete=summary.is_complete,
             )
         )

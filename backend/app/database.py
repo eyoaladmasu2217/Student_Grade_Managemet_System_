@@ -139,5 +139,18 @@ def initialize_database() -> None:
 
             CREATE INDEX IF NOT EXISTS assessment_scores_student_idx
                 ON assessment_scores(student_id);
+
+            CREATE TABLE IF NOT EXISTS grade_bands (
+                code TEXT PRIMARY KEY COLLATE NOCASE,
+                minimum_percentage REAL NOT NULL UNIQUE
+                    CHECK (minimum_percentage >= 0 AND minimum_percentage <= 100)
+            );
             """
+        )
+        connection.executemany(
+            """
+            INSERT OR IGNORE INTO grade_bands (code, minimum_percentage)
+            VALUES (?, ?)
+            """,
+            [("A", 90), ("B", 80), ("C", 70), ("D", 60), ("F", 0)],
         )
