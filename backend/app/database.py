@@ -92,5 +92,17 @@ def initialize_database() -> None:
 
             CREATE INDEX IF NOT EXISTS sections_term_id_idx ON sections(term_id);
             CREATE INDEX IF NOT EXISTS sections_instructor_id_idx ON sections(instructor_id);
+
+            CREATE TABLE IF NOT EXISTS enrollments (
+                id INTEGER PRIMARY KEY,
+                section_id INTEGER NOT NULL REFERENCES sections(id) ON DELETE RESTRICT,
+                student_id INTEGER NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+                status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'withdrawn')),
+                enrolled_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+                UNIQUE (section_id, student_id)
+            );
+
+            CREATE INDEX IF NOT EXISTS enrollments_student_id_idx
+                ON enrollments(student_id, status);
             """
         )

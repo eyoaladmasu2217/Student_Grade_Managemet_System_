@@ -216,3 +216,86 @@ def test_student_cannot_list_users(client: TestClient, tmp_path) -> None:
     response = client.get("/api/users")
 
     assert response.status_code == 403
+
+
+def test_student_only_sees_sections_they_are_enrolled_in(
+    client: TestClient,
+    tmp_path,
+) -> None:
+    create_user(client, tmp_path / "test.sqlite3", "admin")
+    instructor_response = client.post(
+        "/api/users",
+        json={
+            "email": "instructor@example.edu",
+            "full_name": "Course Instructor",
+            "password": "a-secure-password",
+            "role": "instructor",
+        },
+    )
+    student_response = client.post(
+        "/api/users",
+        json={
+            "email": "student@example.edu",
+            "full_name": "Student One",
+            "password": "a-secure-password",
+            "role": "student",
+        },
+    )
+    year_response = client.post(
+        "/api/academic-years",
+        json={
+            "name": "2026-2027",
+            "start_date": "2026-09-01",
+            "end_date": "2027-06-30",
+        },
+    )
+    term_response = client.post(
+        f"/api/academic-years/{year_response.json()['id']}/terms",
+        json={
+            "name": "Fall",
+            "start_date": "2026-09-01",
+            "end_date": "2026-12-20",
+        },
+    )
+    course_response = client.post(
+        "/api/courses",
+        json={"code": "CS101", "title": "Introduction to Computing"},
+    )
+    section_response = client.post(
+        f"/api/courses/{course_response.json()['id']}/sections",
+        json={
+            "term_id": term_response.json()["id"],
+            "instructor_id": instructor_response.json()["id"],
+            "section_code": "A",
+        },
+    )
+    other_section_response = client.post(
+        f"/api/courses/{course_response.json()['id']}/sections",
+        json={
+            "term_id": term_response.json()["id"],
+            "instructor_id": instructor_response.json()["id"],
+            "section_code": "B",
+        },
+    )
+    assert other_section_response.status_code == 201
+    enrollment_response = client.post(
+        f"/api/sections/{section_response.json()['id']}/enrollments",
+        json={"student_id": student_response.json()["id"]},
+    )
+    assert enrollment_response.status_code == 201
+
+    client.post(
+        "/api/auth/login",
+        json={"email": "student@example.edu", "password": "a-secure-password"},
+    )
+    sections_response = client.get("/api/sections")
+    mine_response = client.get("/api/enrollments/mine")
+
+    assert sections_response.status_code == 200
+    assert [section["id"] for section in sections_response.json()] == [
+        section_response.json()["id"]
+    ]
+    assert mine_response.status_code == 200
+    assert [section["id"] for section in mine_response.json()] == [
+        section_response.json()["id"]
+    ]

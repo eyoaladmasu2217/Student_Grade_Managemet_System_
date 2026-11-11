@@ -200,10 +200,15 @@ def list_course_sections(
         query += " AND sections.instructor_id = ?"
         params += (user["id"],)
     elif user["role"] == "student":
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Student section access is available through enrollment",
+        query = (
+            section_query()
+            + """
+            JOIN enrollments ON enrollments.section_id = sections.id
+            WHERE sections.course_id = ? AND enrollments.student_id = ?
+              AND enrollments.status = 'active'
+            """
         )
+        params = (course_id, user["id"])
     query += " ORDER BY terms.start_date, sections.section_code"
     rows = connection.execute(query, params).fetchall()
     return [SectionResponse(**dict(row)) for row in rows]
@@ -214,16 +219,16 @@ def list_sections(
     user: Annotated[sqlite3.Row, Depends(get_current_user)],
     connection: Annotated[sqlite3.Connection, Depends(get_db)],
 ) -> list[SectionResponse]:
-    if user["role"] == "student":
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Student section access is available through enrollment",
-        )
-
     query = section_query()
     params: tuple[int, ...] = ()
     if user["role"] == "instructor":
         query += " WHERE sections.instructor_id = ?"
+        params = (user["id"],)
+    elif user["role"] == "student":
+        query += """
+            JOIN enrollments ON enrollments.section_id = sections.id
+            WHERE enrollments.student_id = ? AND enrollments.status = 'active'
+        """
         params = (user["id"],)
     query += " ORDER BY terms.start_date DESC, courses.code, sections.section_code"
     rows = connection.execute(query, params).fetchall()
