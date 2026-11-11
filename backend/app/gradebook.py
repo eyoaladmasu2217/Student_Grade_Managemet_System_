@@ -91,6 +91,20 @@ def require_category_manager(
     return category
 
 
+def require_gradebook_unreleased(
+    connection: sqlite3.Connection,
+    section_id: int,
+) -> None:
+    if connection.execute(
+        "SELECT 1 FROM section_releases WHERE section_id = ?",
+        (section_id,),
+    ).fetchone():
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Assessment structure cannot change after grades have been released",
+        )
+
+
 @router.get(
     "/api/sections/{section_id}/categories",
     response_model=list[CategoryResponse],
@@ -125,6 +139,7 @@ def create_category(
     connection: Annotated[sqlite3.Connection, Depends(get_db)],
 ) -> CategoryResponse:
     require_section_manager(connection, section_id, user)
+    require_gradebook_unreleased(connection, section_id)
     connection.execute("BEGIN IMMEDIATE")
     total_weight = connection.execute(
         "SELECT COALESCE(SUM(weight), 0) AS total FROM assessment_categories WHERE section_id = ?",
@@ -171,6 +186,7 @@ def update_category_weight(
     connection: Annotated[sqlite3.Connection, Depends(get_db)],
 ) -> CategoryResponse:
     category = require_category_manager(connection, category_id, user)
+    require_gradebook_unreleased(connection, category["section_id"])
     connection.execute("BEGIN IMMEDIATE")
     other_weight = connection.execute(
         """
@@ -235,7 +251,8 @@ def create_assessment(
     user: Annotated[sqlite3.Row, Depends(get_current_user)],
     connection: Annotated[sqlite3.Connection, Depends(get_db)],
 ) -> AssessmentResponse:
-    require_category_manager(connection, category_id, user)
+    category = require_category_manager(connection, category_id, user)
+    require_gradebook_unreleased(connection, category["section_id"])
     try:
         cursor = connection.execute(
             """

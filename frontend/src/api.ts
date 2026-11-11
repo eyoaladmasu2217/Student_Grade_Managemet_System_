@@ -47,6 +47,83 @@ export interface GradeBand {
   minimum_percentage: number;
 }
 
+export interface Enrollment {
+  id: number;
+  section_id: number;
+  student_id: number;
+  student_name: string;
+  student_email: string;
+  status: "active" | "withdrawn";
+}
+
+export interface Category {
+  id: number;
+  section_id: number;
+  name: string;
+  weight: number;
+}
+
+export interface Assessment {
+  id: number;
+  category_id: number;
+  category_name: string;
+  category_weight: number;
+  title: string;
+  max_points: number;
+  due_date: string | null;
+}
+
+export interface GradebookStudent {
+  student_id: number;
+  student_name: string;
+  student_email: string;
+  scores: Record<string, number>;
+  weighted_points: number;
+  graded_weight: number;
+  current_percentage: number | null;
+  final_percentage: number | null;
+  letter_grade: string | null;
+  is_complete: boolean;
+}
+
+export interface Gradebook {
+  section_id: number;
+  grades_released: boolean;
+  released_at: string | null;
+  assessments: Assessment[];
+  students: GradebookStudent[];
+}
+
+export interface ReleasedGrade {
+  section_id: number;
+  course_code: string;
+  course_title: string;
+  section_code: string;
+  term_name: string;
+  percentage: number;
+  letter_grade: string;
+  released_at: string;
+}
+
+export interface GradeCorrection {
+  id: number;
+  section_id: number;
+  student_id: number;
+  student_name: string;
+  assessment_id: number;
+  assessment_title: string;
+  previous_points: number;
+  new_points: number;
+  previous_percentage: number;
+  new_percentage: number;
+  previous_letter_grade: string;
+  new_letter_grade: string;
+  changed_by: number;
+  changed_by_name: string;
+  reason: string;
+  changed_at: string;
+}
+
 export class ApiError extends Error {
   constructor(
     message: string,

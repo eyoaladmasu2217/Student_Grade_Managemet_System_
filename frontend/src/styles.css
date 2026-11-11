@@ -565,6 +565,29 @@ textarea:focus {
   line-height: 1.5;
 }
 
+.category-info {
+  display: grid;
+  gap: 4px;
+}
+
+.weight-editor {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding-top: 5px;
+}
+
+.weight-editor input {
+  width: 82px;
+  min-height: 32px;
+}
+
+.weight-editor .text-button {
+  min-height: 32px;
+  padding: 5px;
+}
+
 .panel-note {
   margin: 12px 0 0;
 }
@@ -614,6 +637,252 @@ textarea:focus {
   margin: 50px 0;
 }
 
+.section-picker {
+  display: grid;
+  min-width: min(320px, 100%);
+  gap: 7px;
+  color: #65728a;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.section-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+  padding: 20px 22px;
+  border: 1px solid #e8ecf3;
+  border-radius: 15px;
+  background: #fff;
+}
+
+.section-summary .eyebrow {
+  margin-bottom: 6px;
+}
+
+.section-summary h2 {
+  margin-bottom: 5px;
+}
+
+.release-badge {
+  flex: 0 0 auto;
+  padding: 8px 11px;
+  border-radius: 999px;
+  background: #fff3dc;
+  color: #946821;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.release-badge--released {
+  background: #e8f6f0;
+  color: #237b5f;
+}
+
+.inline-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 120px auto;
+  align-items: end;
+  gap: 10px;
+}
+
+.inline-form label {
+  display: grid;
+  gap: 6px;
+  color: #65728a;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.subheading {
+  margin: 24px 0 12px;
+  font-family: "Segoe UI", Arial, sans-serif;
+  font-size: 14px;
+}
+
+.panel-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.panel-title-row h2 {
+  margin-bottom: 0;
+}
+
+.panel-title-row .eyebrow {
+  margin-bottom: 5px;
+}
+
+.gradebook-panel {
+  margin: 16px 0;
+}
+
+.table-scroll {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid #e8ecf3;
+  border-radius: 10px;
+}
+
+.data-table {
+  width: 100%;
+  min-width: 760px;
+  border-collapse: collapse;
+  background: #fff;
+  text-align: left;
+}
+
+.data-table th,
+.data-table td {
+  padding: 11px 12px;
+  border-bottom: 1px solid #edf0f5;
+  color: #526078;
+  font-size: 11px;
+  vertical-align: top;
+}
+
+.data-table th {
+  background: #f7f9fc;
+  color: #394b67;
+  font-weight: 700;
+}
+
+.data-table th small,
+.data-table td small {
+  display: block;
+  margin-top: 4px;
+  color: #8a94a8;
+  font-size: 10px;
+  font-weight: 400;
+}
+
+.data-table tbody tr:last-child th,
+.data-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.score-cell {
+  display: grid;
+  min-width: 108px;
+  gap: 5px;
+}
+
+.score-cell input {
+  min-height: 34px;
+  padding: 7px;
+  font-size: 11px;
+}
+
+.score-cell .text-button {
+  justify-self: start;
+  min-height: 24px;
+  padding: 2px 4px;
+}
+
+.cell-error {
+  max-width: 140px;
+  color: #b43830;
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+.empty-cell {
+  text-align: center;
+  color: #7a859a !important;
+}
+
+.compact-table {
+  min-width: 900px;
+}
+
+.student-grade-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 14px;
+}
+
+.student-grade-card {
+  display: grid;
+  min-height: 210px;
+  grid-template-columns: 1fr auto;
+  align-items: start;
+  gap: 16px;
+  padding: 22px;
+  border: 1px solid #e8ecf3;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 10px 32px rgba(34, 54, 95, 0.04);
+}
+
+.student-grade-card .eyebrow {
+  margin-bottom: 7px;
+}
+
+.student-grade-card h2 {
+  margin-bottom: 4px;
+  font-size: 22px;
+}
+
+.student-course-title {
+  margin: 0 0 8px;
+  color: #68758c;
+  font-size: 12px;
+}
+
+.section-caption,
+.released-caption {
+  color: #909aae;
+  font-size: 10px;
+}
+
+.grade-result {
+  display: grid;
+  min-width: 68px;
+  justify-items: center;
+  gap: 3px;
+  padding: 12px 10px;
+  border-radius: 12px;
+  background: #edf2ff;
+  color: #3659a7;
+}
+
+.grade-result strong {
+  font-family: "Segoe UI", Arial, sans-serif;
+  font-size: 22px;
+}
+
+.grade-result span {
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.released-caption {
+  grid-column: 1 / -1;
+  align-self: end;
+  margin: 0;
+}
+
+.empty-panel p {
+  margin-bottom: 0;
+  color: #778198;
+  font-size: 13px;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  clip-path: inset(50%);
+}
+
 @media (max-width: 560px) {
   .login-card,
   .notice-card {
@@ -631,6 +900,15 @@ textarea:focus {
   .dashboard-heading {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .section-summary {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .inline-form {
+    grid-template-columns: 1fr;
   }
 
   .panel {

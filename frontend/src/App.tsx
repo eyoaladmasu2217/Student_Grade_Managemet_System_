@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { ApiError, apiRequest, User } from "./api";
 import AdminDashboard from "./AdminDashboard";
+import InstructorDashboard from "./InstructorDashboard";
 import LoginPage from "./LoginPage";
+import StudentDashboard from "./StudentDashboard";
 
 type SessionState = "loading" | "signed-out" | "signed-in" | "unavailable";
 
@@ -101,19 +103,9 @@ export default function App() {
       </header>
 
       {error && <p className="form-error global-error" role="alert">{error}</p>}
-      {user.role === "admin" ? (
-        <AdminDashboard />
-      ) : (
-        <section className="workspace role-placeholder">
-          <p className="eyebrow">SIGNED IN AS {user.role.toUpperCase()}</p>
-          <h1>{user.role === "instructor" ? "Your teaching workspace" : "Your grades"}</h1>
-          <p className="welcome-copy">
-            {user.role === "instructor"
-              ? "Your section gradebooks will appear here."
-              : "Released course grades will appear here."}
-          </p>
-        </section>
-      )}
+      {user.role === "admin" && <AdminDashboard />}
+      {user.role === "instructor" && <InstructorDashboard />}
+      {user.role === "student" && <StudentDashboard />}
     </main>
   );
 }

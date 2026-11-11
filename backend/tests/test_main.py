@@ -859,6 +859,10 @@ def test_released_grade_correction_updates_result_and_records_audit(
     )
     client.post(f"/api/sections/{section_id}/release")
 
+    structure_change = client.post(
+        f"/api/categories/{category_response.json()['id']}/assessments",
+        json={"title": "Extra exam", "max_points": 100},
+    )
     blocked_update = client.put(
         f"/api/assessments/{assessment_id}/scores/{student_id}",
         json={"points": 80},
@@ -875,6 +879,7 @@ def test_released_grade_correction_updates_result_and_records_audit(
     updated_grade = client.get(f"/api/sections/{section_id}/my-grade")
 
     assert blocked_update.status_code == 409
+    assert structure_change.status_code == 409
     assert correction_response.status_code == 200
     assert correction_response.json()["previous_points"] == 92
     assert correction_response.json()["new_points"] == 80
