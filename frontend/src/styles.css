@@ -1,7 +1,5 @@
-@import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap");
-
 :root {
-  font-family: "DM Sans", sans-serif;
+  font-family: "Segoe UI", Arial, sans-serif;
   color: #17233c;
   background: #f5f7fb;
   font-synthesis: none;
@@ -59,7 +57,7 @@ a {
   border-radius: 13px;
   background: #2449a6;
   color: white;
-  font-family: "Manrope", sans-serif;
+  font-family: "Segoe UI", Arial, sans-serif;
   font-size: 19px;
   font-weight: 800;
 }
@@ -70,7 +68,7 @@ a {
 }
 
 .brand strong {
-  font-family: "Manrope", sans-serif;
+  font-family: "Segoe UI", Arial, sans-serif;
   font-size: 14px;
   font-weight: 800;
 }
@@ -132,7 +130,7 @@ p {
 h1,
 h2,
 h3 {
-  font-family: "Manrope", sans-serif;
+  font-family: "Segoe UI", Arial, sans-serif;
 }
 
 h1 {
@@ -302,5 +300,171 @@ h2 {
 
   .page-footer {
     flex-direction: column;
+  }
+}
+
+.login-layout,
+.loading-screen {
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+  padding: 24px;
+}
+
+.login-card,
+.notice-card {
+  width: min(100%, 440px);
+  padding: 36px;
+  border: 1px solid #e8ecf3;
+  border-radius: 20px;
+  background: #fff;
+  box-shadow: 0 16px 50px rgba(34, 54, 95, 0.08);
+}
+
+.login-brand {
+  margin-bottom: 42px;
+}
+
+.login-card h1,
+.notice-card h1 {
+  margin-bottom: 10px;
+  font-size: 32px;
+}
+
+.login-description,
+.login-footnote,
+.notice-card p:not(.eyebrow) {
+  color: #69758b;
+  font-size: 13px;
+  line-height: 1.65;
+}
+
+.login-footnote {
+  margin: 20px 0 0;
+  text-align: center;
+}
+
+.form-stack {
+  display: grid;
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.form-stack label,
+.form-grid label {
+  display: grid;
+  gap: 7px;
+  color: #40506a;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+input,
+select,
+textarea {
+  width: 100%;
+  min-height: 42px;
+  padding: 10px 12px;
+  border: 1px solid #dfe5ef;
+  border-radius: 9px;
+  background: #fff;
+  color: #17233c;
+  font: inherit;
+  font-size: 13px;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: #5272bd;
+  outline: 3px solid rgba(82, 114, 189, 0.14);
+}
+
+.primary-button,
+.secondary-button {
+  min-height: 40px;
+  padding: 9px 14px;
+  border: 0;
+  border-radius: 9px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.primary-button {
+  background: #2449a6;
+  color: #fff;
+}
+
+.primary-button:hover:not(:disabled) {
+  background: #1d3d8e;
+}
+
+.primary-button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.secondary-button {
+  border: 1px solid #dfe5ef;
+  background: #fff;
+  color: #40506a;
+}
+
+.secondary-button:hover {
+  border-color: #b8c5dd;
+  background: #f7f9fc;
+}
+
+.form-error {
+  margin: 0;
+  color: #b43830;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.global-error {
+  margin: 12px 0 0;
+}
+
+.account-menu {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.account-details {
+  display: grid;
+  gap: 3px;
+  text-align: right;
+}
+
+.account-details strong {
+  font-size: 12px;
+}
+
+.account-details small {
+  color: #758099;
+  font-size: 11px;
+  text-transform: capitalize;
+}
+
+.notice-card {
+  max-width: 560px;
+}
+
+.loading-screen {
+  color: #69758b;
+  font-size: 14px;
+}
+
+@media (max-width: 560px) {
+  .login-card,
+  .notice-card {
+    padding: 24px;
+  }
+
+  .account-details {
+    display: none;
   }
 }

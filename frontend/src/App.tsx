@@ -1,29 +1,37 @@
 import { useEffect, useState } from "react";
+import { ApiError, apiRequest, User } from "./api";
+import LoginPage from "./LoginPage";
 
-type ApiStatus = "checking" | "online" | "offline";
+type SessionState = "loading" | "signed-out" | "signed-in" | "unavailable";
 
 export default function App() {
-  const [apiStatus, setApiStatus] = useState<ApiStatus>("checking");
+  const [user, setUser] = useState<User | null>(null);
+  const [sessionState, setSessionState] = useState<SessionState>("loading");
+  const [error, setError] = useState("");
 
   useEffect(() => {
     let active = true;
-
-    fetch("/api/health")
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error(`Health check failed: ${response.status}`);
-        }
-        return response.json() as Promise<{ status: string }>;
-      })
-      .then((result) => {
+    apiRequest<User>("/api/auth/me")
+      .then((currentUser) => {
         if (active) {
-          setApiStatus(result.status === "ok" ? "online" : "offline");
+          setUser(currentUser);
+          setSessionState("signed-in");
         }
       })
-      .catch(() => {
-        if (active) {
-          setApiStatus("offline");
+      .catch((requestError: unknown) => {
+        if (!active) {
+          return;
         }
+        if (requestError instanceof ApiError && requestError.status === 401) {
+          setSessionState("signed-out");
+          return;
+        }
+        setError(
+          requestError instanceof Error
+            ? requestError.message
+            : "The API could not be reached.",
+        );
+        setSessionState("unavailable");
       });
 
     return () => {
@@ -31,11 +39,46 @@ export default function App() {
     };
   }, []);
 
-  const statusText = {
-    checking: "Checking API",
-    online: "API connected",
-    offline: "API unavailable",
-  }[apiStatus];
+  async function signOut() {
+    try {
+      await apiRequest<void>("/api/auth/logout", { method: "POST" });
+      setUser(null);
+      setSessionState("signed-out");
+      setError("");
+    } catch (requestError) {
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Unable to sign out. Try again.",
+      );
+    }
+  }
+
+  if (sessionState === "loading") {
+    return <main className="loading-screen" aria-live="polite">Loading your workspace...</main>;
+  }
+
+  if (sessionState === "unavailable") {
+    return (
+      <main className="loading-screen">
+        <section className="notice-card">
+          <p className="eyebrow">CONNECTION ISSUE</p>
+          <h1>We could not load your workspace.</h1>
+          <p>{error}</p>
+          <button className="secondary-button" onClick={() => window.location.reload()}>
+            Try again
+          </button>
+        </section>
+      </main>
+    );
+  }
+
+  if (!user) {
+    return <LoginPage onLogin={(signedInUser) => {
+      setUser(signedInUser);
+      setSessionState("signed-in");
+    }} />;
+  }
 
   return (
     <main className="app-shell">
@@ -47,12 +90,16 @@ export default function App() {
             <small>Academic services</small>
           </span>
         </a>
-        <span className={`api-status api-status--${apiStatus}`}>
-          <span className="status-dot" aria-hidden="true" />
-          {statusText}
-        </span>
+        <div className="account-menu">
+          <span className="account-details">
+            <strong>{user.full_name}</strong>
+            <small>{user.role.replace("_", " ")}</small>
+          </span>
+          <button className="secondary-button" onClick={signOut}>Sign out</button>
+        </div>
       </header>
 
+      {error && <p className="form-error global-error" role="alert">{error}</p>}
       <section className="welcome">
         <p className="eyebrow">STUDENT GRADE MANAGEMENT</p>
         <h1>Every course. Every learner. One clear picture.</h1>
@@ -61,41 +108,13 @@ export default function App() {
           results at BITS College.
         </p>
       </section>
-
-      <section className="workspace" aria-labelledby="workspace-title">
-        <div className="section-heading">
-          <div>
-            <p className="eyebrow">YOUR WORKSPACE</p>
-            <h2 id="workspace-title">Grade management</h2>
-          </div>
-          <span className="term-pill">Academic workspace</span>
-        </div>
-        <div className="feature-grid">
-          <article className="feature-card">
-            <span className="card-icon card-icon--blue" aria-hidden="true">01</span>
-            <h3>Academic structure</h3>
-            <p>Set up academic years, terms, courses, and sections.</p>
-            <span className="card-state">Foundation in progress</span>
-          </article>
-          <article className="feature-card">
-            <span className="card-icon card-icon--green" aria-hidden="true">02</span>
-            <h3>Course gradebooks</h3>
-            <p>Organize assessments and weighted grading for each section.</p>
-            <span className="card-state">Foundation in progress</span>
-          </article>
-          <article className="feature-card">
-            <span className="card-icon card-icon--amber" aria-hidden="true">03</span>
-            <h3>Student results</h3>
-            <p>Release final grades and keep a clear history of corrections.</p>
-            <span className="card-state">Foundation in progress</span>
-          </article>
-        </div>
+      <section className="workspace">
+        <p className="eyebrow">SIGNED IN AS {user.role.toUpperCase()}</p>
+        <h2>Your academic workspace is ready</h2>
+        <p className="welcome-copy">
+          The grade management features for your role are being connected.
+        </p>
       </section>
-
-      <footer className="page-footer">
-        <span>Built for BITS College</span>
-        <span>Student Grade Management System</span>
-      </footer>
     </main>
   );
 }
