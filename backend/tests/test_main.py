@@ -187,3 +187,32 @@ def test_instructor_only_lists_assigned_sections(client: TestClient, tmp_path) -
 
     assert response.status_code == 200
     assert response.json() == []
+
+
+def test_admin_can_create_user_without_exposing_password_hash(
+    client: TestClient,
+    tmp_path,
+) -> None:
+    create_user(client, tmp_path / "test.sqlite3", "admin")
+
+    response = client.post(
+        "/api/users",
+        json={
+            "email": "new.student@example.edu",
+            "full_name": "New Student",
+            "password": "a-secure-password",
+            "role": "student",
+        },
+    )
+
+    assert response.status_code == 201
+    assert response.json()["email"] == "new.student@example.edu"
+    assert "password_hash" not in response.json()
+
+
+def test_student_cannot_list_users(client: TestClient, tmp_path) -> None:
+    create_user(client, tmp_path / "test.sqlite3", "student")
+
+    response = client.get("/api/users")
+
+    assert response.status_code == 403

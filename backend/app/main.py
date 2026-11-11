@@ -8,6 +8,7 @@ from app.academic import router as academic_router
 from app.auth import router as auth_router
 from app.courses import course_router, section_router
 from app.database import initialize_database
+from app.users import router as users_router
 
 
 @asynccontextmanager
@@ -35,6 +36,7 @@ app.include_router(auth_router)
 app.include_router(academic_router)
 app.include_router(course_router)
 app.include_router(section_router)
+app.include_router(users_router)
 
 
 @app.get("/api/health", tags=["health"])
