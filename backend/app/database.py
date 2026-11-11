@@ -51,5 +51,27 @@ def initialize_database() -> None:
 
             CREATE INDEX IF NOT EXISTS sessions_user_id_idx ON sessions(user_id);
             CREATE INDEX IF NOT EXISTS sessions_expires_at_idx ON sessions(expires_at);
+
+            CREATE TABLE IF NOT EXISTS academic_years (
+                id INTEGER PRIMARY KEY,
+                name TEXT NOT NULL UNIQUE,
+                start_date TEXT NOT NULL,
+                end_date TEXT NOT NULL,
+                CHECK (start_date <= end_date)
+            );
+
+            CREATE TABLE IF NOT EXISTS terms (
+                id INTEGER PRIMARY KEY,
+                academic_year_id INTEGER NOT NULL
+                    REFERENCES academic_years(id) ON DELETE RESTRICT,
+                name TEXT NOT NULL,
+                start_date TEXT NOT NULL,
+                end_date TEXT NOT NULL,
+                CHECK (start_date <= end_date),
+                UNIQUE (academic_year_id, name)
+            );
+
+            CREATE INDEX IF NOT EXISTS terms_academic_year_idx
+                ON terms(academic_year_id);
             """
         )
