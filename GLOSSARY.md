@@ -43,6 +43,9 @@ The points earned by one student on one assessment.
 **Course grade**:
 A student's calculated result for one course section, represented as a percentage and a letter grade.
 
+**Instructor gradebook**:
+An instructor's working record for a section, containing its assessments, student assessment scores, and current course grade calculations.
+
 **Grade release**:
 The instructor's action that makes course grades visible to enrolled students.
 
