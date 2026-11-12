@@ -1,35 +1,26 @@
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useState, useSyncExternalStore } from "react";
+import { apiRequest, Assessment, Category, Section } from "./api";
 import {
-  apiRequest,
-  Assessment,
-  Category,
-  Enrollment,
-  Gradebook,
-  GradeCorrection,
-  jsonBody,
-  Section,
-} from "./api";
-
-function messageOf(error: unknown): string {
-  return error instanceof Error ? error.message : "The request could not be completed.";
-}
+  createInstructorGradebookWorkflow,
+} from "./instructorGradebookWorkflow";
 
 interface ScoreCellProps {
   assessment: Assessment;
   studentId: number;
   score: number | undefined;
   released: boolean;
-  onSaved: () => void;
+  error: string;
+  onSave: (assessmentId: number, studentId: number, points: number, reason: string) => Promise<boolean>;
 }
 
 interface WeightEditorProps {
   category: Category;
-  onSaved: () => void;
+  error: string;
+  onSave: (categoryId: number, weight: number) => Promise<boolean>;
 }
 
-function WeightEditor({ category, onSaved }: WeightEditorProps) {
+function WeightEditor({ category, error, onSave }: WeightEditorProps) {
   const [weight, setWeight] = useState(String(category.weight));
-  const [error, setError] = useState("");
 
   useEffect(() => {
     setWeight(String(category.weight));
@@ -37,16 +28,7 @@ function WeightEditor({ category, onSaved }: WeightEditorProps) {
 
   async function saveWeight(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setError("");
-    try {
-      await apiRequest(`/api/categories/${category.id}/weight`, {
-        method: "PATCH",
-        body: jsonBody({ weight: Number(weight) }),
-      });
-      onSaved();
-    } catch (saveError) {
-      setError(messageOf(saveError));
-    }
+    await onSave(category.id, Number(weight));
   }
 
   return (
@@ -75,11 +57,11 @@ function ScoreCell({
   studentId,
   score,
   released,
-  onSaved,
+  error,
+  onSave,
 }: ScoreCellProps) {
   const [points, setPoints] = useState(score === undefined ? "" : String(score));
   const [reason, setReason] = useState("");
-  const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -89,19 +71,14 @@ function ScoreCell({
   async function saveScore(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSaving(true);
-    setError("");
     try {
-      const path = released
-        ? `/api/assessments/${assessment.id}/scores/${studentId}/correction`
-        : `/api/assessments/${assessment.id}/scores/${studentId}`;
-      const payload = released
-        ? { points: Number(points), reason }
-        : { points: Number(points) };
-      await apiRequest(path, { method: "PUT", body: jsonBody(payload) });
-      setReason("");
-      onSaved();
-    } catch (saveError) {
-      setError(messageOf(saveError));
+      const saved = await onSave(
+        assessment.id,
+        studentId,
+        Number(points),
+        reason,
+      );
+      if (saved) setReason("");
     } finally {
       setSaving(false);
     }
@@ -141,16 +118,17 @@ function ScoreCell({
 }
 
 export default function InstructorDashboard() {
+  const [workflow] = useState(() => createInstructorGradebookWorkflow());
+  const workflowState = useSyncExternalStore(
+    workflow.subscribe,
+    workflow.getSnapshot,
+    workflow.getSnapshot,
+  );
   const [sections, setSections] = useState<Section[]>([]);
   const [sectionId, setSectionId] = useState("");
-  const [gradebook, setGradebook] = useState<Gradebook | null>(null);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [roster, setRoster] = useState<Enrollment[]>([]);
-  const [corrections, setCorrections] = useState<GradeCorrection[]>([]);
-  const [refreshKey, setRefreshKey] = useState(0);
-  const [error, setError] = useState("");
-  const [message, setMessage] = useState("");
-  const [working, setWorking] = useState(false);
+  const [sectionError, setSectionError] = useState("");
+  const { gradebook, categories, roster, corrections, error, message, working, fieldErrors } =
+    workflowState;
 
   useEffect(() => {
     let active = true;
@@ -162,7 +140,13 @@ export default function InstructorDashboard() {
         }
       })
       .catch((loadError: unknown) => {
-        if (active) setError(messageOf(loadError));
+        if (active) {
+          setSectionError(
+            loadError instanceof Error
+              ? loadError.message
+              : "The request could not be completed.",
+          );
+        }
       });
     return () => {
       active = false;
@@ -170,108 +154,34 @@ export default function InstructorDashboard() {
   }, []);
 
   useEffect(() => {
-    if (!sectionId) {
-      setGradebook(null);
-      setCategories([]);
-      setRoster([]);
-      setCorrections([]);
-      return;
-    }
-    let active = true;
-    const section = Number(sectionId);
-    Promise.all([
-      apiRequest<Gradebook>(`/api/sections/${section}/gradebook`),
-      apiRequest<Category[]>(`/api/sections/${section}/categories`),
-      apiRequest<Enrollment[]>(`/api/sections/${section}/enrollments`),
-      apiRequest<GradeCorrection[]>(`/api/sections/${section}/corrections`),
-    ])
-      .then(([nextGradebook, nextCategories, nextRoster, nextCorrections]) => {
-        if (active) {
-          setGradebook(nextGradebook);
-          setCategories(nextCategories);
-          setRoster(nextRoster);
-          setCorrections(nextCorrections);
-          setError("");
-        }
-      })
-      .catch((loadError: unknown) => {
-        if (active) setError(messageOf(loadError));
-      });
-    return () => {
-      active = false;
-    };
-  }, [sectionId, refreshKey]);
-
-  function refresh() {
-    setRefreshKey((key) => key + 1);
-  }
+    void workflow.selectSection(sectionId);
+  }, [sectionId, workflow]);
 
   async function createCategory(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!sectionId) return;
-    const form = new FormData(event.currentTarget);
-    const payload = {
-      name: String(form.get("name") ?? ""),
-      weight: Number(form.get("weight")),
-    };
-    await submit(
-      () =>
-        apiRequest(`/api/sections/${sectionId}/categories`, {
-          method: "POST",
-          body: jsonBody(payload),
-        }),
-      "Assessment category created.",
-      event.currentTarget,
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
+    const saved = await workflow.createCategory(
+      String(form.get("name") ?? ""),
+      Number(form.get("weight")),
     );
+    if (saved) formElement.reset();
   }
 
   async function createAssessment(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const form = new FormData(event.currentTarget);
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
     const categoryId = Number(form.get("category_id"));
     const dueDate = String(form.get("due_date") ?? "");
-    const payload = {
-      title: String(form.get("title") ?? ""),
-      max_points: Number(form.get("max_points")),
-      due_date: dueDate || null,
-    };
-    await submit(
-      () =>
-        apiRequest(`/api/categories/${categoryId}/assessments`, {
-          method: "POST",
-          body: jsonBody(payload),
-        }),
-      "Assessment created.",
-      event.currentTarget,
+    const saved = await workflow.createAssessment(
+      categoryId,
+      String(form.get("title") ?? ""),
+      Number(form.get("max_points")),
+      dueDate || null,
     );
-  }
-
-  async function submit(
-    action: () => Promise<unknown>,
-    successMessage: string,
-    form?: HTMLFormElement,
-  ) {
-    setError("");
-    setMessage("");
-    setWorking(true);
-    try {
-      await action();
-      form?.reset();
-      setMessage(successMessage);
-      refresh();
-    } catch (submitError) {
-      setError(messageOf(submitError));
-    } finally {
-      setWorking(false);
-    }
-  }
-
-  async function releaseGrades() {
-    if (!sectionId) return;
-    await submit(
-      () => apiRequest(`/api/sections/${sectionId}/release`, { method: "POST" }),
-      "Final grades released to students.",
-    );
+    if (saved) formElement.reset();
   }
 
   const section = sections.find((item) => String(item.id) === sectionId);
@@ -305,7 +215,9 @@ export default function InstructorDashboard() {
         )}
       </div>
 
-      {error && <p className="form-error dashboard-message" role="alert">{error}</p>}
+      {(error || sectionError) && (
+        <p className="form-error dashboard-message" role="alert">{error || sectionError}</p>
+      )}
       {message && <p className="success-message dashboard-message" role="status">{message}</p>}
 
       {!sectionId ? (
@@ -350,7 +262,11 @@ export default function InstructorDashboard() {
                       <span>{category.weight}% of final grade</span>
                     </div>
                     {!gradebook?.grades_released && (
-                      <WeightEditor category={category} onSaved={refresh} />
+                      <WeightEditor
+                        category={category}
+                        error={fieldErrors[`weight:${category.id}`] ?? ""}
+                        onSave={workflow.saveCategoryWeight}
+                      />
                     )}
                   </li>
                 ))}
@@ -417,7 +333,7 @@ export default function InstructorDashboard() {
                 <h2>Assessment scores</h2>
               </div>
               {!gradebook?.grades_released ? (
-                <button className="primary-button" onClick={releaseGrades} disabled={!canRelease || working}>
+                <button className="primary-button" onClick={workflow.releaseGrades} disabled={!canRelease || working}>
                   {working ? "Working..." : "Release final grades"}
                 </button>
               ) : (
@@ -460,7 +376,8 @@ export default function InstructorDashboard() {
                             studentId={student.student_id}
                             score={student.scores[String(assessment.id)]}
                             released={gradebook.grades_released}
-                            onSaved={refresh}
+                            error={fieldErrors[`score:${assessment.id}:${student.student_id}`] ?? ""}
+                            onSave={workflow.saveScore}
                           />
                         </td>
                       ))}
