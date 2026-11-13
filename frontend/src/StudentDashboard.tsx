@@ -33,7 +33,11 @@ export default function StudentDashboard() {
   }, [reloadKey]);
 
   return (
-    <section className="dashboard-layout" aria-labelledby="student-title">
+    <section
+      className="dashboard-layout"
+      aria-labelledby="student-title"
+      aria-busy={loading}
+    >
       <div className="dashboard-heading">
         <div>
           <p className="eyebrow">STUDENT WORKSPACE</p>
@@ -42,7 +46,9 @@ export default function StudentDashboard() {
             Only grades released by your instructors appear here.
           </p>
         </div>
-        <span className="term-pill">{grades.length} released grades</span>
+        <span className="term-pill">
+          {grades.length} released {grades.length === 1 ? "grade" : "grades"}
+        </span>
       </div>
 
       {error ? (
@@ -57,7 +63,9 @@ export default function StudentDashboard() {
           </button>
         </div>
       ) : loading ? (
-        <p className="empty-state">Loading your grades...</p>
+        <p className="empty-state" role="status" aria-live="polite">
+          Loading your grades...
+        </p>
       ) : grades.length === 0 ? (
         <section className="panel empty-panel">
           <h2>No released grades yet</h2>
