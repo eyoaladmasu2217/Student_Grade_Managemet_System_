@@ -125,6 +125,7 @@ export default function InstructorDashboard() {
     workflow.getSnapshot,
   );
   const [sections, setSections] = useState<Section[]>([]);
+  const [sectionsLoading, setSectionsLoading] = useState(true);
   const [sectionId, setSectionId] = useState("");
   const [sectionError, setSectionError] = useState("");
   const { gradebook, categories, roster, corrections, error, message, working, fieldErrors } =
@@ -132,6 +133,8 @@ export default function InstructorDashboard() {
 
   useEffect(() => {
     let active = true;
+    setSectionsLoading(true);
+    setSectionError("");
     apiRequest<Section[]>("/api/sections")
       .then((result) => {
         if (active) {
@@ -146,6 +149,11 @@ export default function InstructorDashboard() {
               ? loadError.message
               : "The request could not be completed.",
           );
+        }
+      })
+      .finally(() => {
+        if (active) {
+          setSectionsLoading(false);
         }
       });
     return () => {
@@ -192,7 +200,11 @@ export default function InstructorDashboard() {
     gradebook.students.every((student) => student.is_complete);
 
   return (
-    <section className="dashboard-layout" aria-labelledby="instructor-title">
+    <section
+      className="dashboard-layout"
+      aria-labelledby="instructor-title"
+      aria-busy={sectionsLoading || workflowState.loading}
+    >
       <div className="dashboard-heading">
         <div>
           <p className="eyebrow">INSTRUCTOR WORKSPACE</p>
@@ -220,7 +232,11 @@ export default function InstructorDashboard() {
       )}
       {message && <p className="success-message dashboard-message" role="status">{message}</p>}
 
-      {!sectionId ? (
+      {sectionsLoading ? (
+        <p className="empty-state" role="status" aria-live="polite">
+          Loading assigned sections...
+        </p>
+      ) : !sectionId ? (
         <section className="panel empty-panel">
           <h2>No assigned sections</h2>
           <p>Your sections will appear here after an academic administrator assigns them.</p>
