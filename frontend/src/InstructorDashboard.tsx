@@ -3,6 +3,7 @@ import { apiRequest, Assessment, Category, Section } from "./api";
 import {
   createInstructorGradebookWorkflow,
 } from "./instructorGradebookWorkflow";
+import { getGradeReleaseReadiness } from "./gradebookReadiness";
 
 interface ScoreCellProps {
   assessment: Assessment;
@@ -211,11 +212,7 @@ export default function InstructorDashboard() {
   }
 
   const section = sections.find((item) => String(item.id) === sectionId);
-  const canRelease =
-    !!gradebook &&
-    !gradebook.grades_released &&
-    gradebook.students.length > 0 &&
-    gradebook.students.every((student) => student.is_complete);
+  const releaseReadiness = getGradeReleaseReadiness(gradebook);
 
   return (
     <section
@@ -388,7 +385,11 @@ export default function InstructorDashboard() {
                 <h2>Assessment scores</h2>
               </div>
               {!gradebook?.grades_released ? (
-                <button className="primary-button" onClick={workflow.releaseGrades} disabled={!canRelease || working}>
+                <button
+                  className="primary-button"
+                  onClick={workflow.releaseGrades}
+                  disabled={!releaseReadiness.canRelease || working}
+                >
                   {working ? "Working..." : "Release final grades"}
                 </button>
               ) : (
@@ -397,9 +398,9 @@ export default function InstructorDashboard() {
                 </span>
               )}
             </div>
-            {!canRelease && !gradebook?.grades_released && (
-              <p className="panel-note">
-                Release becomes available when the category weights total 100% and every active student has a score for every assessment.
+            {!gradebook?.grades_released && (
+              <p className="panel-note" role="status" aria-live="polite">
+                {releaseReadiness.message}
               </p>
             )}
             <div className="table-scroll">
