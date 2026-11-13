@@ -151,6 +151,32 @@ function messageFromPayload(payload: unknown): string {
   ) {
     return detail.message;
   }
+  if (Array.isArray(detail)) {
+    const messages = detail.flatMap((issue) => {
+      if (typeof issue !== "object" || issue === null || !("msg" in issue)) {
+        return [];
+      }
+
+      const location =
+        "loc" in issue && Array.isArray(issue.loc)
+          ? issue.loc.filter(
+              (part: unknown): part is string | number =>
+                typeof part === "string" || typeof part === "number",
+            )
+          : [];
+      const path = ["body", "query", "path"].includes(String(location[0]))
+        ? location.slice(1).join(".")
+        : location.join(".");
+      return [
+        path && typeof issue.msg === "string"
+          ? `${path}: ${issue.msg}`
+          : issue.msg,
+      ];
+    });
+    if (messages.length > 0) {
+      return messages.join("; ");
+    }
+  }
   return "The request could not be completed. Check the submitted information.";
 }
 
