@@ -126,6 +126,7 @@ export default function InstructorDashboard() {
   );
   const [sections, setSections] = useState<Section[]>([]);
   const [sectionsLoading, setSectionsLoading] = useState(true);
+  const [sectionsLoadKey, setSectionsLoadKey] = useState(0);
   const [sectionId, setSectionId] = useState("");
   const [sectionError, setSectionError] = useState("");
   const { gradebook, categories, roster, corrections, error, message, working, fieldErrors } =
@@ -159,7 +160,7 @@ export default function InstructorDashboard() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [sectionsLoadKey]);
 
   useEffect(() => {
     void workflow.selectSection(sectionId);
@@ -227,8 +228,18 @@ export default function InstructorDashboard() {
         )}
       </div>
 
-      {(error || sectionError) && (
-        <p className="form-error dashboard-message" role="alert">{error || sectionError}</p>
+      {error && <p className="form-error dashboard-message" role="alert">{error}</p>}
+      {sectionError && (
+        <div className="dashboard-message">
+          <p className="form-error" role="alert">{sectionError}</p>
+          <button
+            className="secondary-button"
+            type="button"
+            onClick={() => setSectionsLoadKey((key) => key + 1)}
+          >
+            Retry section list
+          </button>
+        </div>
       )}
       {message && <p className="success-message dashboard-message" role="status">{message}</p>}
 
@@ -236,7 +247,7 @@ export default function InstructorDashboard() {
         <p className="empty-state" role="status" aria-live="polite">
           Loading assigned sections...
         </p>
-      ) : !sectionId ? (
+      ) : sectionError ? null : !sectionId ? (
         <section className="panel empty-panel">
           <h2>No assigned sections</h2>
           <p>Your sections will appear here after an academic administrator assigns them.</p>
