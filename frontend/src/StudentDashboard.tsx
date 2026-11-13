@@ -5,9 +5,12 @@ export default function StudentDashboard() {
   const [grades, setGrades] = useState<ReleasedGrade[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     let active = true;
+    setLoading(true);
+    setError("");
     apiRequest<ReleasedGrade[]>("/api/enrollments/mine/grades")
       .then((result) => {
         if (active) setGrades(result);
@@ -27,7 +30,7 @@ export default function StudentDashboard() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [reloadKey]);
 
   return (
     <section className="dashboard-layout" aria-labelledby="student-title">
@@ -43,7 +46,16 @@ export default function StudentDashboard() {
       </div>
 
       {error ? (
-        <p className="form-error dashboard-message" role="alert">{error}</p>
+        <div className="dashboard-message">
+          <p className="form-error" role="alert">{error}</p>
+          <button
+            className="secondary-button"
+            type="button"
+            onClick={() => setReloadKey((key) => key + 1)}
+          >
+            Try again
+          </button>
+        </div>
       ) : loading ? (
         <p className="empty-state">Loading your grades...</p>
       ) : grades.length === 0 ? (
