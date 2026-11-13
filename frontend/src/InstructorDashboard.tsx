@@ -3,23 +3,26 @@ import { apiRequest, Assessment, Category, Section } from "./api";
 import {
   createInstructorGradebookWorkflow,
 } from "./instructorGradebookWorkflow";
+import { getGradeReleaseReadiness } from "./gradebookReadiness";
 
 interface ScoreCellProps {
   assessment: Assessment;
   studentId: number;
   score: number | undefined;
   released: boolean;
+  disabled: boolean;
   error: string;
   onSave: (assessmentId: number, studentId: number, points: number, reason: string) => Promise<boolean>;
 }
 
 interface WeightEditorProps {
   category: Category;
+  disabled: boolean;
   error: string;
   onSave: (categoryId: number, weight: number) => Promise<boolean>;
 }
 
-function WeightEditor({ category, error, onSave }: WeightEditorProps) {
+function WeightEditor({ category, disabled, error, onSave }: WeightEditorProps) {
   const [weight, setWeight] = useState(String(category.weight));
 
   useEffect(() => {
@@ -43,10 +46,13 @@ function WeightEditor({ category, error, onSave }: WeightEditorProps) {
         max="100"
         step="0.1"
         value={weight}
+        disabled={disabled}
         onChange={(event) => setWeight(event.target.value)}
         required
       />
-      <button className="text-button" type="submit">Save weight</button>
+      <button className="text-button" type="submit" disabled={disabled}>
+        Save weight
+      </button>
       {error && <span className="cell-error" role="alert">{error}</span>}
     </form>
   );
@@ -57,6 +63,7 @@ function ScoreCell({
   studentId,
   score,
   released,
+  disabled,
   error,
   onSave,
 }: ScoreCellProps) {
@@ -96,6 +103,7 @@ function ScoreCell({
         max={assessment.max_points}
         step="0.01"
         value={points}
+        disabled={disabled}
         onChange={(event) => setPoints(event.target.value)}
         required
       />
@@ -104,12 +112,13 @@ function ScoreCell({
           aria-label="Correction reason"
           placeholder="Reason for correction"
           value={reason}
+          disabled={disabled}
           onChange={(event) => setReason(event.target.value)}
           minLength={8}
           required
         />
       )}
-      <button className="text-button" type="submit" disabled={saving}>
+      <button className="text-button" type="submit" disabled={saving || disabled}>
         {saving ? "Saving..." : released ? "Correct" : "Save"}
       </button>
       {error && <span className="cell-error" role="alert">{error}</span>}
@@ -125,13 +134,26 @@ export default function InstructorDashboard() {
     workflow.getSnapshot,
   );
   const [sections, setSections] = useState<Section[]>([]);
+  const [sectionsLoading, setSectionsLoading] = useState(true);
+  const [sectionsLoadKey, setSectionsLoadKey] = useState(0);
   const [sectionId, setSectionId] = useState("");
   const [sectionError, setSectionError] = useState("");
-  const { gradebook, categories, roster, corrections, error, message, working, fieldErrors } =
-    workflowState;
+  const {
+    gradebook,
+    categories,
+    roster,
+    corrections,
+    error,
+    message,
+    loading,
+    working,
+    fieldErrors,
+  } = workflowState;
 
   useEffect(() => {
     let active = true;
+    setSectionsLoading(true);
+    setSectionError("");
     apiRequest<Section[]>("/api/sections")
       .then((result) => {
         if (active) {
@@ -147,11 +169,16 @@ export default function InstructorDashboard() {
               : "The request could not be completed.",
           );
         }
+      })
+      .finally(() => {
+        if (active) {
+          setSectionsLoading(false);
+        }
       });
     return () => {
       active = false;
     };
-  }, []);
+  }, [sectionsLoadKey]);
 
   useEffect(() => {
     void workflow.selectSection(sectionId);
@@ -185,14 +212,14 @@ export default function InstructorDashboard() {
   }
 
   const section = sections.find((item) => String(item.id) === sectionId);
-  const canRelease =
-    !!gradebook &&
-    !gradebook.grades_released &&
-    gradebook.students.length > 0 &&
-    gradebook.students.every((student) => student.is_complete);
+  const releaseReadiness = getGradeReleaseReadiness(gradebook);
 
   return (
-    <section className="dashboard-layout" aria-labelledby="instructor-title">
+    <section
+      className="dashboard-layout"
+      aria-labelledby="instructor-title"
+      aria-busy={sectionsLoading || workflowState.loading}
+    >
       <div className="dashboard-heading">
         <div>
           <p className="eyebrow">INSTRUCTOR WORKSPACE</p>
@@ -215,12 +242,26 @@ export default function InstructorDashboard() {
         )}
       </div>
 
-      {(error || sectionError) && (
-        <p className="form-error dashboard-message" role="alert">{error || sectionError}</p>
+      {error && <p className="form-error dashboard-message" role="alert">{error}</p>}
+      {sectionError && (
+        <div className="dashboard-message">
+          <p className="form-error" role="alert">{sectionError}</p>
+          <button
+            className="secondary-button"
+            type="button"
+            onClick={() => setSectionsLoadKey((key) => key + 1)}
+          >
+            Retry section list
+          </button>
+        </div>
       )}
       {message && <p className="success-message dashboard-message" role="status">{message}</p>}
 
-      {!sectionId ? (
+      {sectionsLoading ? (
+        <p className="empty-state" role="status" aria-live="polite">
+          Loading assigned sections...
+        </p>
+      ) : sectionError ? null : !sectionId ? (
         <section className="panel empty-panel">
           <h2>No assigned sections</h2>
           <p>Your sections will appear here after an academic administrator assigns them.</p>
@@ -234,10 +275,20 @@ export default function InstructorDashboard() {
               <p className="panel-note">Section {section?.section_code}</p>
             </div>
             <div className={`release-badge ${gradebook?.grades_released ? "release-badge--released" : ""}`}>
-              {gradebook?.grades_released ? "Grades released" : "Draft gradebook"}
+              {loading
+                ? "Loading gradebook..."
+                : gradebook?.grades_released
+                  ? "Grades released"
+                  : "Draft gradebook"}
             </div>
           </section>
 
+          {loading ? (
+            <p className="empty-state" role="status" aria-live="polite">
+              Loading gradebook, roster, and correction history...
+            </p>
+          ) : (
+          <>
           <div className="dashboard-grid">
             <article className="panel">
               <h2>Assessment categories</h2>
@@ -264,6 +315,7 @@ export default function InstructorDashboard() {
                     {!gradebook?.grades_released && (
                       <WeightEditor
                         category={category}
+                        disabled={working}
                         error={fieldErrors[`weight:${category.id}`] ?? ""}
                         onSave={workflow.saveCategoryWeight}
                       />
@@ -333,7 +385,11 @@ export default function InstructorDashboard() {
                 <h2>Assessment scores</h2>
               </div>
               {!gradebook?.grades_released ? (
-                <button className="primary-button" onClick={workflow.releaseGrades} disabled={!canRelease || working}>
+                <button
+                  className="primary-button"
+                  onClick={workflow.releaseGrades}
+                  disabled={!releaseReadiness.canRelease || working}
+                >
                   {working ? "Working..." : "Release final grades"}
                 </button>
               ) : (
@@ -342,9 +398,9 @@ export default function InstructorDashboard() {
                 </span>
               )}
             </div>
-            {!canRelease && !gradebook?.grades_released && (
-              <p className="panel-note">
-                Release becomes available when the category weights total 100% and every active student has a score for every assessment.
+            {!gradebook?.grades_released && (
+              <p className="panel-note" role="status" aria-live="polite">
+                {releaseReadiness.message}
               </p>
             )}
             <div className="table-scroll">
@@ -376,6 +432,7 @@ export default function InstructorDashboard() {
                             studentId={student.student_id}
                             score={student.scores[String(assessment.id)]}
                             released={gradebook.grades_released}
+                            disabled={working}
                             error={fieldErrors[`score:${assessment.id}:${student.student_id}`] ?? ""}
                             onSave={workflow.saveScore}
                           />
@@ -445,6 +502,8 @@ export default function InstructorDashboard() {
               <p className="empty-state">No released-grade corrections recorded for this section.</p>
             )}
           </section>
+          </>
+          )}
         </>
       )}
     </section>

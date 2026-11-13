@@ -35,6 +35,8 @@ function messageOf(error: unknown): string {
 export default function AdminDashboard() {
   const [data, setData] = useState(emptyData);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [working, setWorking] = useState(false);
@@ -42,6 +44,8 @@ export default function AdminDashboard() {
   useEffect(() => {
     let active = true;
     async function load() {
+      setLoading(true);
+      setLoadError("");
       try {
         const [years, courses, users, sections, gradeBands] = await Promise.all([
           apiRequest<AcademicYear[]>("/api/academic-years"),
@@ -64,11 +68,14 @@ export default function AdminDashboard() {
             sections,
             gradeBands,
           });
-          setError("");
         }
       } catch (loadError) {
         if (active) {
-          setError(messageOf(loadError));
+          setLoadError(messageOf(loadError));
+        }
+      } finally {
+        if (active) {
+          setLoading(false);
         }
       }
     }
@@ -225,7 +232,11 @@ export default function AdminDashboard() {
   const yearById = new Map(data.years.map((year) => [year.id, year.name]));
 
   return (
-    <section className="dashboard-layout" aria-labelledby="admin-title">
+    <section
+      className="dashboard-layout"
+      aria-labelledby="admin-title"
+      aria-busy={loading}
+    >
       <div className="dashboard-heading">
         <div>
           <p className="eyebrow">ADMINISTRATION</p>
@@ -234,13 +245,31 @@ export default function AdminDashboard() {
             Manage the calendar, accounts, course sections, enrollment, and grade scale.
           </p>
         </div>
-        <span className="term-pill">{data.sections.length} sections</span>
+        <span className="term-pill">
+          {loading ? "Loading setup..." : `${data.sections.length} sections`}
+        </span>
       </div>
 
       {error && <p className="form-error dashboard-message" role="alert">{error}</p>}
       {message && <p className="success-message dashboard-message" role="status">{message}</p>}
 
-      <div className="dashboard-grid">
+      {loading ? (
+        <p className="empty-state" role="status" aria-live="polite">
+          Loading academic setup...
+        </p>
+      ) : loadError ? (
+        <div className="panel">
+          <p className="form-error" role="alert">{loadError}</p>
+          <button
+            className="secondary-button"
+            type="button"
+            onClick={() => setRefreshKey((key) => key + 1)}
+          >
+            Retry loading setup
+          </button>
+        </div>
+      ) : (
+        <div className="dashboard-grid">
         <article className="panel">
           <h2>Academic years</h2>
           <form className="form-grid" onSubmit={createYear}>
@@ -513,7 +542,8 @@ export default function AdminDashboard() {
             </div>
           </form>
         </article>
-      </div>
+        </div>
+      )}
     </section>
   );
 }

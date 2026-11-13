@@ -50,7 +50,14 @@ export default function PasswordChangeForm({
     <section className="panel password-panel" aria-labelledby="password-title">
       <div className="panel-title-row">
         <h2 id="password-title">Change password</h2>
-        <button className="text-button" type="button" onClick={onCancel}>Cancel</button>
+        <button
+          className="text-button"
+          type="button"
+          onClick={onCancel}
+          disabled={saving}
+        >
+          Cancel
+        </button>
       </div>
       <form className="password-form" onSubmit={submit}>
         <label>
@@ -84,7 +91,12 @@ export default function PasswordChangeForm({
           <button className="primary-button" type="submit" disabled={saving}>
             {saving ? "Updating..." : "Update password"}
           </button>
-          <button className="secondary-button" type="button" onClick={onCancel}>
+          <button
+            className="secondary-button"
+            type="button"
+            onClick={onCancel}
+            disabled={saving}
+          >
             Cancel
           </button>
         </div>
