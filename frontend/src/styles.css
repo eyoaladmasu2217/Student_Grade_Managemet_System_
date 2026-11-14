@@ -385,7 +385,16 @@ input:focus,
 select:focus,
 textarea:focus {
   border-color: #5272bd;
-  outline: 3px solid rgba(82, 114, 189, 0.14);
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.primary-button:focus-visible,
+.secondary-button:focus-visible,
+.text-button:focus-visible,
+.brand:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
 }
 
 .primary-button,
