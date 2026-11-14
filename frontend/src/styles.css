@@ -36,15 +36,16 @@ a {
 }
 
 .app-shell {
-  width: min(1120px, calc(100% - 48px));
+  width: min(1200px, calc(100% - 48px));
   margin: 0 auto;
 }
 
 .topbar {
   display: flex;
-  min-height: 88px;
+  min-height: 80px;
   align-items: center;
   justify-content: space-between;
+  gap: 20px;
   border-bottom: 1px solid #e5e9f1;
 }
 
@@ -436,7 +437,9 @@ textarea:focus {
 
 .account-menu {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
+  justify-content: flex-end;
   gap: 16px;
 }
 
