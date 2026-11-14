@@ -1,6 +1,13 @@
 :root {
+  --color-ink: #17233c;
+  --color-muted: #69758b;
+  --color-brand: #2449a6;
+  --color-brand-hover: #1d3d8e;
+  --color-border: #e5e9f1;
+  --surface: #fff;
+  --focus-ring: 0 0 0 3px rgba(82, 114, 189, 0.18);
   font-family: "Segoe UI", Arial, sans-serif;
-  color: #17233c;
+  color: var(--color-ink);
   background: #f5f7fb;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -20,7 +27,7 @@ body {
   margin: 0;
   background:
     radial-gradient(ellipse at 87% 14%, rgba(86, 133, 255, 0.1), transparent 25rem),
-    #f5f7fb;
+    #f6f8fc;
 }
 
 button,
@@ -55,7 +62,7 @@ a {
   height: 42px;
   place-items: center;
   border-radius: 13px;
-  background: #2449a6;
+  background: var(--color-brand);
   color: white;
   font-family: "Segoe UI", Arial, sans-serif;
   font-size: 19px;
@@ -392,12 +399,12 @@ textarea:focus {
 }
 
 .primary-button {
-  background: #2449a6;
+  background: var(--color-brand);
   color: #fff;
 }
 
 .primary-button:hover:not(:disabled) {
-  background: #1d3d8e;
+  background: var(--color-brand-hover);
 }
 
 .primary-button:disabled {
