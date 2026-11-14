@@ -898,6 +898,13 @@ textarea:focus {
   border-radius: 16px;
   background: #fff;
   box-shadow: 0 10px 32px rgba(34, 54, 95, 0.04);
+  transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+
+.student-grade-card:hover {
+  transform: translateY(-2px);
+  border-color: #dce3f0;
+  box-shadow: 0 14px 36px rgba(34, 54, 95, 0.08);
 }
 
 .student-grade-card .eyebrow {
