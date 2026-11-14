@@ -1,6 +1,13 @@
 :root {
+  --color-ink: #17233c;
+  --color-muted: #69758b;
+  --color-brand: #2449a6;
+  --color-brand-hover: #1d3d8e;
+  --color-border: #e5e9f1;
+  --surface: #fff;
+  --focus-ring: 0 0 0 3px rgba(82, 114, 189, 0.18);
   font-family: "Segoe UI", Arial, sans-serif;
-  color: #17233c;
+  color: var(--color-ink);
   background: #f5f7fb;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -20,7 +27,7 @@ body {
   margin: 0;
   background:
     radial-gradient(ellipse at 87% 14%, rgba(86, 133, 255, 0.1), transparent 25rem),
-    #f5f7fb;
+    #f6f8fc;
 }
 
 button,
@@ -29,15 +36,16 @@ a {
 }
 
 .app-shell {
-  width: min(1120px, calc(100% - 48px));
+  width: min(1200px, calc(100% - 48px));
   margin: 0 auto;
 }
 
 .topbar {
   display: flex;
-  min-height: 88px;
+  min-height: 80px;
   align-items: center;
   justify-content: space-between;
+  gap: 20px;
   border-bottom: 1px solid #e5e9f1;
 }
 
@@ -55,7 +63,7 @@ a {
   height: 42px;
   place-items: center;
   border-radius: 13px;
-  background: #2449a6;
+  background: var(--color-brand);
   color: white;
   font-family: "Segoe UI", Arial, sans-serif;
   font-size: 19px;
@@ -371,13 +379,43 @@ textarea {
   color: #17233c;
   font: inherit;
   font-size: 13px;
+  transition: border-color 140ms ease, box-shadow 140ms ease, background-color 140ms ease;
+}
+
+input:hover:not(:disabled),
+select:hover:not(:disabled),
+textarea:hover:not(:disabled) {
+  border-color: #b8c5dd;
+}
+
+input:disabled,
+select:disabled,
+textarea:disabled {
+  background: #f3f5f9;
+  color: #7a859a;
+  cursor: not-allowed;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #929caf;
+  opacity: 1;
 }
 
 input:focus,
 select:focus,
 textarea:focus {
   border-color: #5272bd;
-  outline: 3px solid rgba(82, 114, 189, 0.14);
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.primary-button:focus-visible,
+.secondary-button:focus-visible,
+.text-button:focus-visible,
+.brand:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
 }
 
 .primary-button,
@@ -389,20 +427,31 @@ textarea:focus {
   cursor: pointer;
   font-size: 12px;
   font-weight: 700;
+  transition: background-color 140ms ease, box-shadow 140ms ease, transform 140ms ease;
 }
 
 .primary-button {
-  background: #2449a6;
+  background: var(--color-brand);
   color: #fff;
 }
 
 .primary-button:hover:not(:disabled) {
-  background: #1d3d8e;
+  background: var(--color-brand-hover);
 }
 
 .primary-button:disabled {
   cursor: wait;
   opacity: 0.65;
+}
+
+.secondary-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.primary-button:active:not(:disabled),
+.secondary-button:active:not(:disabled) {
+  transform: translateY(1px);
 }
 
 .secondary-button {
@@ -411,7 +460,7 @@ textarea:focus {
   color: #40506a;
 }
 
-.secondary-button:hover {
+.secondary-button:hover:not(:disabled) {
   border-color: #b8c5dd;
   background: #f7f9fc;
 }
@@ -429,7 +478,9 @@ textarea:focus {
 
 .account-menu {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
+  justify-content: flex-end;
   gap: 16px;
 }
 
@@ -454,8 +505,25 @@ textarea:focus {
 }
 
 .loading-screen {
+  gap: 12px;
   color: #69758b;
   font-size: 14px;
+  text-align: center;
+}
+
+.loading-indicator {
+  width: 22px;
+  height: 22px;
+  border: 2px solid #dfe5ef;
+  border-top-color: #4667b2;
+  border-radius: 50%;
+  animation: loading-spin 700ms linear infinite;
+}
+
+@keyframes loading-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .dashboard-layout {
@@ -505,6 +573,12 @@ textarea:focus {
   border-radius: 16px;
   background: rgba(255, 255, 255, 0.9);
   box-shadow: 0 10px 32px rgba(34, 54, 95, 0.04);
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.panel:hover {
+  border-color: #dce3f0;
+  box-shadow: 0 14px 36px rgba(34, 54, 95, 0.07);
 }
 
 .panel h2 {
@@ -776,6 +850,14 @@ textarea:focus {
   font-weight: 700;
 }
 
+.data-table tbody tr:nth-child(even) {
+  background: #fafbfe;
+}
+
+.data-table tbody tr:hover {
+  background: #f1f5fc;
+}
+
 .data-table th small,
 .data-table td small {
   display: block;
@@ -841,6 +923,13 @@ textarea:focus {
   border-radius: 16px;
   background: #fff;
   box-shadow: 0 10px 32px rgba(34, 54, 95, 0.04);
+  transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+
+.student-grade-card:hover {
+  transform: translateY(-2px);
+  border-color: #dce3f0;
+  box-shadow: 0 14px 36px rgba(34, 54, 95, 0.08);
 }
 
 .student-grade-card .eyebrow {
@@ -907,6 +996,12 @@ textarea:focus {
   clip-path: inset(50%);
 }
 
+@media (max-width: 800px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 560px) {
   .login-card,
   .notice-card {
@@ -941,5 +1036,16 @@ textarea:focus {
 
   .password-form {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
   }
 }

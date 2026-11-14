@@ -81,7 +81,11 @@ export default function StudentDashboard() {
                 <p className="student-course-title">{grade.course_title}</p>
                 <span className="section-caption">Section {grade.section_code}</span>
               </div>
-              <div className="grade-result">
+              <div
+                className="grade-result"
+                role="group"
+                aria-label={`Final grade ${grade.letter_grade}, ${grade.percentage} percent`}
+              >
                 <strong>{grade.letter_grade}</strong>
                 <span>{grade.percentage}%</span>
               </div>
