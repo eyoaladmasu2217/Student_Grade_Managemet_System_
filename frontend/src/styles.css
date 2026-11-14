@@ -964,6 +964,12 @@ textarea:focus {
   clip-path: inset(50%);
 }
 
+@media (max-width: 800px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 560px) {
   .login-card,
   .notice-card {
