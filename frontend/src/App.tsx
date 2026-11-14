@@ -61,7 +61,12 @@ export default function App() {
   }
 
   if (sessionState === "loading") {
-    return <main className="loading-screen" aria-live="polite">Loading your workspace...</main>;
+    return (
+      <main className="loading-screen" aria-live="polite" aria-busy="true">
+        <span className="loading-indicator" aria-hidden="true" />
+        Loading your workspace...
+      </main>
+    );
   }
 
   if (sessionState === "unavailable") {

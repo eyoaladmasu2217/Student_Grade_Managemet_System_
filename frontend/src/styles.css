@@ -505,8 +505,25 @@ textarea:focus {
 }
 
 .loading-screen {
+  gap: 12px;
   color: #69758b;
   font-size: 14px;
+  text-align: center;
+}
+
+.loading-indicator {
+  width: 22px;
+  height: 22px;
+  border: 2px solid #dfe5ef;
+  border-top-color: #4667b2;
+  border-radius: 50%;
+  animation: loading-spin 700ms linear infinite;
+}
+
+@keyframes loading-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .dashboard-layout {
