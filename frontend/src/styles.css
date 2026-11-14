@@ -833,6 +833,14 @@ textarea:focus {
   font-weight: 700;
 }
 
+.data-table tbody tr:nth-child(even) {
+  background: #fafbfe;
+}
+
+.data-table tbody tr:hover {
+  background: #f1f5fc;
+}
+
 .data-table th small,
 .data-table td small {
   display: block;
