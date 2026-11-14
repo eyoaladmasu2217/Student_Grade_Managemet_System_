@@ -556,6 +556,12 @@ textarea:focus {
   border-radius: 16px;
   background: rgba(255, 255, 255, 0.9);
   box-shadow: 0 10px 32px rgba(34, 54, 95, 0.04);
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.panel:hover {
+  border-color: #dce3f0;
+  box-shadow: 0 14px 36px rgba(34, 54, 95, 0.07);
 }
 
 .panel h2 {
