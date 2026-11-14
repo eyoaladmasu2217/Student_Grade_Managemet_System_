@@ -406,6 +406,7 @@ textarea:focus {
   cursor: pointer;
   font-size: 12px;
   font-weight: 700;
+  transition: background-color 140ms ease, box-shadow 140ms ease, transform 140ms ease;
 }
 
 .primary-button {
@@ -422,13 +423,23 @@ textarea:focus {
   opacity: 0.65;
 }
 
+.secondary-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.primary-button:active:not(:disabled),
+.secondary-button:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
 .secondary-button {
   border: 1px solid #dfe5ef;
   background: #fff;
   color: #40506a;
 }
 
-.secondary-button:hover {
+.secondary-button:hover:not(:disabled) {
   border-color: #b8c5dd;
   background: #f7f9fc;
 }
