@@ -379,6 +379,27 @@ textarea {
   color: #17233c;
   font: inherit;
   font-size: 13px;
+  transition: border-color 140ms ease, box-shadow 140ms ease, background-color 140ms ease;
+}
+
+input:hover:not(:disabled),
+select:hover:not(:disabled),
+textarea:hover:not(:disabled) {
+  border-color: #b8c5dd;
+}
+
+input:disabled,
+select:disabled,
+textarea:disabled {
+  background: #f3f5f9;
+  color: #7a859a;
+  cursor: not-allowed;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #929caf;
+  opacity: 1;
 }
 
 input:focus,
