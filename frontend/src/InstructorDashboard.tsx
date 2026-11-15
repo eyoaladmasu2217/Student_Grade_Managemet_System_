@@ -213,6 +213,25 @@ export default function InstructorDashboard() {
 
   const section = sections.find((item) => String(item.id) === sectionId);
   const releaseReadiness = getGradeReleaseReadiness(gradebook);
+  const totalWeight = categories.reduce((sum, category) => sum + category.weight, 0);
+  const metrics = [
+    { label: "Enrolled students", value: roster.length, hint: "Active roster" },
+    {
+      label: "Categories",
+      value: categories.length,
+      hint: `${totalWeight.toFixed(1)}% weighted`,
+    },
+    {
+      label: "Assessments",
+      value: gradebook?.assessments.length ?? 0,
+      hint: "Graded items",
+    },
+    {
+      label: "Release status",
+      value: releaseReadiness.canRelease ? "Ready" : "Draft",
+      hint: releaseReadiness.canRelease ? "All checks passed" : "Needs attention",
+    },
+  ];
 
   return (
     <section
@@ -271,7 +290,7 @@ export default function InstructorDashboard() {
           <section className="section-summary">
             <div>
               <p className="eyebrow">{section?.term_name ?? "COURSE SECTION"}</p>
-              <h2>{section?.course_code} · {section?.course_title}</h2>
+              <h2>{section?.course_code} A� {section?.course_title}</h2>
               <p className="panel-note">Section {section?.section_code}</p>
             </div>
             <div className={`release-badge ${gradebook?.grades_released ? "release-badge--released" : ""}`}>
@@ -282,6 +301,21 @@ export default function InstructorDashboard() {
                   : "Draft gradebook"}
             </div>
           </section>
+
+          {!loading && (
+            <div className="stat-grid">
+              {metrics.map((metric, index) => (
+                <article
+                  className={`stat-card ${index === 0 ? "stat-card--accent" : ""}`}
+                  key={metric.label}
+                >
+                  <span className="stat-label">{metric.label}</span>
+                  <strong className="stat-value">{metric.value}</strong>
+                  <span className="stat-hint">{metric.hint}</span>
+                </article>
+              ))}
+            </div>
+          )}
 
           {loading ? (
             <p className="empty-state" role="status" aria-live="polite">
