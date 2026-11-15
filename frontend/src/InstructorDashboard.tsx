@@ -4,6 +4,7 @@ import {
   createInstructorGradebookWorkflow,
 } from "./instructorGradebookWorkflow";
 import { getGradeReleaseReadiness } from "./gradebookReadiness";
+import { gradeTone } from "./gradeDisplay";
 
 interface ScoreCellProps {
   assessment: Assessment;
@@ -213,6 +214,25 @@ export default function InstructorDashboard() {
 
   const section = sections.find((item) => String(item.id) === sectionId);
   const releaseReadiness = getGradeReleaseReadiness(gradebook);
+  const totalWeight = categories.reduce((sum, category) => sum + category.weight, 0);
+  const metrics = [
+    { label: "Enrolled students", value: roster.length, hint: "Active roster" },
+    {
+      label: "Categories",
+      value: categories.length,
+      hint: `${totalWeight.toFixed(1)}% weighted`,
+    },
+    {
+      label: "Assessments",
+      value: gradebook?.assessments.length ?? 0,
+      hint: "Graded items",
+    },
+    {
+      label: "Release status",
+      value: releaseReadiness.canRelease ? "Ready" : "Draft",
+      hint: releaseReadiness.canRelease ? "All checks passed" : "Needs attention",
+    },
+  ];
 
   return (
     <section
@@ -258,9 +278,17 @@ export default function InstructorDashboard() {
       {message && <p className="success-message dashboard-message" role="status">{message}</p>}
 
       {sectionsLoading ? (
-        <p className="empty-state" role="status" aria-live="polite">
-          Loading assigned sections...
-        </p>
+        <>
+          <span className="skeleton skeleton-section" aria-hidden="true" />
+          <div className="stat-grid" aria-hidden="true">
+            {[0, 1, 2, 3].map((index) => (
+              <span className="skeleton skeleton-stat" key={index} />
+            ))}
+          </div>
+          <p className="visually-hidden" role="status" aria-live="polite">
+            Loading assigned sections...
+          </p>
+        </>
       ) : sectionError ? null : !sectionId ? (
         <section className="panel empty-panel">
           <h2>No assigned sections</h2>
@@ -283,10 +311,32 @@ export default function InstructorDashboard() {
             </div>
           </section>
 
+          {!loading && (
+            <div className="stat-grid">
+              {metrics.map((metric, index) => (
+                <article
+                  className={`stat-card ${index === 0 ? "stat-card--accent" : ""}`}
+                  key={metric.label}
+                >
+                  <span className="stat-label">{metric.label}</span>
+                  <strong className="stat-value">{metric.value}</strong>
+                  <span className="stat-hint">{metric.hint}</span>
+                </article>
+              ))}
+            </div>
+          )}
+
           {loading ? (
-            <p className="empty-state" role="status" aria-live="polite">
-              Loading gradebook, roster, and correction history...
-            </p>
+            <>
+              <div className="dashboard-grid" aria-hidden="true">
+                <span className="skeleton skeleton-panel" />
+                <span className="skeleton skeleton-panel" />
+              </div>
+              <span className="skeleton skeleton-section" aria-hidden="true" />
+              <p className="visually-hidden" role="status" aria-live="polite">
+                Loading gradebook, roster, and correction history...
+              </p>
+            </>
           ) : (
           <>
           <div className="dashboard-grid">
@@ -403,6 +453,26 @@ export default function InstructorDashboard() {
                 {releaseReadiness.message}
               </p>
             )}
+            {!gradebook?.grades_released && releaseReadiness.totalStudents > 0 && (
+              <div className="readiness">
+                <div className="readiness-track" aria-hidden="true">
+                  <span
+                    className="readiness-fill"
+                    style={{
+                      width: `${
+                        (releaseReadiness.completeStudents /
+                          releaseReadiness.totalStudents) *
+                        100
+                      }%`,
+                    }}
+                  />
+                </div>
+                <span className="readiness-label">
+                  {releaseReadiness.completeStudents} of{" "}
+                  {releaseReadiness.totalStudents} complete
+                </span>
+              </div>
+            )}
             <div className="table-scroll">
               <table className="data-table">
                 <thead>
@@ -440,9 +510,13 @@ export default function InstructorDashboard() {
                       ))}
                       <td>{student.current_percentage === null ? "—" : `${student.current_percentage}%`}</td>
                       <td>
-                        {student.final_percentage === null
-                          ? "Incomplete"
-                          : `${student.final_percentage}% · ${student.letter_grade}`}
+                        {student.final_percentage === null ? (
+                          <span className="grade-badge grade-badge--neutral">Incomplete</span>
+                        ) : (
+                          <span className={`grade-badge grade-badge--${gradeTone(student.letter_grade)}`}>
+                            {student.final_percentage}% · {student.letter_grade}
+                          </span>
+                        )}
                       </td>
                     </tr>
                   ))}

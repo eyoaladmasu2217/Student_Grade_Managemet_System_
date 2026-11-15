@@ -8,6 +8,21 @@ import StudentDashboard from "./StudentDashboard";
 
 type SessionState = "loading" | "signed-out" | "signed-in" | "unavailable";
 
+const roleLabels: Record<User["role"], string> = {
+  admin: "Academic administrator",
+  instructor: "Instructor",
+  student: "Student",
+};
+
+function initialsOf(fullName: string): string {
+  return fullName
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? "")
+    .join("");
+}
+
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
   const [sessionState, setSessionState] = useState<SessionState>("loading");
@@ -63,8 +78,19 @@ export default function App() {
   if (sessionState === "loading") {
     return (
       <main className="loading-screen" aria-live="polite" aria-busy="true">
-        <span className="loading-indicator" aria-hidden="true" />
-        Loading your workspace...
+        <div className="loading-shell">
+          <span className="loading-indicator" aria-hidden="true" />
+          <p className="loading-copy">Loading your workspace...</p>
+          <div className="skeleton-grid" aria-hidden="true">
+            <span className="skeleton skeleton-stat" />
+            <span className="skeleton skeleton-stat" />
+            <span className="skeleton skeleton-stat" />
+          </div>
+          <div className="skeleton-grid skeleton-grid--panels" aria-hidden="true">
+            <span className="skeleton skeleton-panel" />
+            <span className="skeleton skeleton-panel" />
+          </div>
+        </div>
       </main>
     );
   }
@@ -96,26 +122,36 @@ export default function App() {
       <header className="topbar">
         <a className="brand" href="/" aria-label="BITS College gradebook home">
           <span className="brand-mark" aria-hidden="true">B</span>
-          <span>
+          <span className="brand-copy">
             <strong>BITS College</strong>
             <small>Academic services</small>
           </span>
         </a>
         <div className="account-menu">
-          <span className="account-details">
-            <strong>{user.full_name}</strong>
-            <small>{user.role.replace("_", " ")}</small>
+          <span className="account-chip">
+            <span className="avatar" aria-hidden="true">{initialsOf(user.full_name)}</span>
+            <span className="account-details">
+              <strong>{user.full_name}</strong>
+              <small>{roleLabels[user.role]}</small>
+            </span>
           </span>
-          <button
-            className="secondary-button"
-            onClick={() => {
-              setAccountMessage("");
-              setChangingPassword((isOpen) => !isOpen);
-            }}
-          >
-            Change password
-          </button>
-          <button className="secondary-button" onClick={signOut}>Sign out</button>
+          <div className="account-actions">
+            <button
+              className="secondary-button secondary-button--compact"
+              onClick={() => {
+                setAccountMessage("");
+                setChangingPassword((isOpen) => !isOpen);
+              }}
+            >
+              Change password
+            </button>
+            <button
+              className="secondary-button secondary-button--compact"
+              onClick={signOut}
+            >
+              Sign out
+            </button>
+          </div>
         </div>
       </header>
 
