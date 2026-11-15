@@ -532,7 +532,7 @@ export default function AdminDashboard() {
                     />
                   </label>
                   <button
-                    className="text-button"
+                    className="text-button text-button--danger"
                     type="button"
                     onClick={() =>
                       setData((current) => ({
