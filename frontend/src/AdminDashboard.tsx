@@ -325,7 +325,7 @@ export default function AdminDashboard() {
             {data.years.map((year) => (
               <li key={year.id}>
                 <strong>{year.name}</strong>
-                <span>{year.start_date} — {year.end_date}</span>
+                <span>{year.start_date} – {year.end_date}</span>
               </li>
             ))}
             {data.years.length === 0 && <li className="empty-state">No academic years yet.</li>}
@@ -364,7 +364,7 @@ export default function AdminDashboard() {
             {data.terms.map((term) => (
               <li key={term.id}>
                 <strong>{term.name} · {yearById.get(term.academic_year_id)}</strong>
-                <span>{term.start_date} — {term.end_date}</span>
+                <span>{term.start_date} – {term.end_date}</span>
               </li>
             ))}
             {data.terms.length === 0 && <li className="empty-state">No terms yet.</li>}

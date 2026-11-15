@@ -299,7 +299,7 @@ export default function InstructorDashboard() {
           <section className="section-summary">
             <div>
               <p className="eyebrow">{section?.term_name ?? "COURSE SECTION"}</p>
-              <h2>{section?.course_code} A� {section?.course_title}</h2>
+              <h2>{section?.course_code} · {section?.course_title}</h2>
               <p className="panel-note">Section {section?.section_code}</p>
             </div>
             <div className={`release-badge ${gradebook?.grades_released ? "release-badge--released" : ""}`}>
