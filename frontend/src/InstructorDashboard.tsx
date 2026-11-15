@@ -4,6 +4,7 @@ import {
   createInstructorGradebookWorkflow,
 } from "./instructorGradebookWorkflow";
 import { getGradeReleaseReadiness } from "./gradebookReadiness";
+import { gradeTone } from "./gradeDisplay";
 
 interface ScoreCellProps {
   assessment: Assessment;
@@ -437,6 +438,26 @@ export default function InstructorDashboard() {
                 {releaseReadiness.message}
               </p>
             )}
+            {!gradebook?.grades_released && releaseReadiness.totalStudents > 0 && (
+              <div className="readiness">
+                <div className="readiness-track" aria-hidden="true">
+                  <span
+                    className="readiness-fill"
+                    style={{
+                      width: `${
+                        (releaseReadiness.completeStudents /
+                          releaseReadiness.totalStudents) *
+                        100
+                      }%`,
+                    }}
+                  />
+                </div>
+                <span className="readiness-label">
+                  {releaseReadiness.completeStudents} of{" "}
+                  {releaseReadiness.totalStudents} complete
+                </span>
+              </div>
+            )}
             <div className="table-scroll">
               <table className="data-table">
                 <thead>
@@ -474,9 +495,13 @@ export default function InstructorDashboard() {
                       ))}
                       <td>{student.current_percentage === null ? "—" : `${student.current_percentage}%`}</td>
                       <td>
-                        {student.final_percentage === null
-                          ? "Incomplete"
-                          : `${student.final_percentage}% · ${student.letter_grade}`}
+                        {student.final_percentage === null ? (
+                          <span className="grade-badge grade-badge--neutral">Incomplete</span>
+                        ) : (
+                          <span className={`grade-badge grade-badge--${gradeTone(student.letter_grade)}`}>
+                            {student.final_percentage}% · {student.letter_grade}
+                          </span>
+                        )}
                       </td>
                     </tr>
                   ))}

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { apiRequest, ReleasedGrade } from "./api";
+import { clampPercentage, gradeTone } from "./gradeDisplay";
 
 export default function StudentDashboard() {
   const [grades, setGrades] = useState<ReleasedGrade[]>([]);
@@ -108,27 +109,36 @@ export default function StudentDashboard() {
         </section>
       ) : (
         <div className="student-grade-grid">
-          {grades.map((grade) => (
-            <article className="student-grade-card" key={grade.section_id}>
-              <div>
-                <p className="eyebrow">{grade.term_name}</p>
-                <h2>{grade.course_code}</h2>
-                <p className="student-course-title">{grade.course_title}</p>
-                <span className="section-caption">Section {grade.section_code}</span>
-              </div>
-              <div
-                className="grade-result"
-                role="group"
-                aria-label={`Final grade ${grade.letter_grade}, ${grade.percentage} percent`}
-              >
-                <strong>{grade.letter_grade}</strong>
-                <span>{grade.percentage}%</span>
-              </div>
-              <p className="released-caption">
-                Released {new Date(grade.released_at).toLocaleDateString()}
-              </p>
-            </article>
-          ))}
+          {grades.map((grade) => {
+            const tone = gradeTone(grade.letter_grade);
+            return (
+              <article className="student-grade-card" key={grade.section_id}>
+                <div>
+                  <p className="eyebrow">{grade.term_name}</p>
+                  <h2>{grade.course_code}</h2>
+                  <p className="student-course-title">{grade.course_title}</p>
+                  <span className="section-caption">Section {grade.section_code}</span>
+                </div>
+                <div
+                  className={`grade-result grade-result--${tone}`}
+                  role="group"
+                  aria-label={`Final grade ${grade.letter_grade}, ${grade.percentage} percent`}
+                >
+                  <strong>{grade.letter_grade}</strong>
+                  <span>{grade.percentage}%</span>
+                </div>
+                <div
+                  className={`grade-meter grade-meter--${tone}`}
+                  aria-hidden="true"
+                >
+                  <span style={{ width: `${clampPercentage(grade.percentage)}%` }} />
+                </div>
+                <p className="released-caption">
+                  Released {new Date(grade.released_at).toLocaleDateString()}
+                </p>
+              </article>
+            );
+          })}
         </div>
       )}
     </section>
