@@ -230,6 +230,13 @@ export default function AdminDashboard() {
   const students = data.users.filter((user) => user.role === "student");
   const instructors = data.users.filter((user) => user.role === "instructor");
   const yearById = new Map(data.years.map((year) => [year.id, year.name]));
+  const stats = [
+    { label: "Academic years", value: data.years.length, hint: "Calendar records" },
+    { label: "Terms", value: data.terms.length, hint: "Across all years" },
+    { label: "Courses", value: data.courses.length, hint: "Catalog entries" },
+    { label: "Sections", value: data.sections.length, hint: "Scheduled classes" },
+    { label: "Students", value: students.length, hint: "Active accounts" },
+  ];
 
   return (
     <section
@@ -252,6 +259,21 @@ export default function AdminDashboard() {
 
       {error && <p className="form-error dashboard-message" role="alert">{error}</p>}
       {message && <p className="success-message dashboard-message" role="status">{message}</p>}
+
+      {!loading && !loadError && (
+        <div className="stat-grid">
+          {stats.map((stat, index) => (
+            <article
+              className={`stat-card ${index === 0 ? "stat-card--accent" : ""}`}
+              key={stat.label}
+            >
+              <span className="stat-label">{stat.label}</span>
+              <strong className="stat-value">{stat.value}</strong>
+              <span className="stat-hint">{stat.hint}</span>
+            </article>
+          ))}
+        </div>
+      )}
 
       {loading ? (
         <p className="empty-state" role="status" aria-live="polite">
