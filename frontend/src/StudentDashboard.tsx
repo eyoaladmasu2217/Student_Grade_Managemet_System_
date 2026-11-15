@@ -32,6 +32,26 @@ export default function StudentDashboard() {
     };
   }, [reloadKey]);
 
+  const average =
+    grades.length > 0
+      ? grades.reduce((sum, grade) => sum + grade.percentage, 0) / grades.length
+      : 0;
+  const best = grades.reduce<ReleasedGrade | null>(
+    (top, grade) => (!top || grade.percentage > top.percentage ? grade : top),
+    null,
+  );
+  const termCount = new Set(grades.map((grade) => grade.term_name)).size;
+  const stats = [
+    { label: "Released grades", value: grades.length, hint: "Published results" },
+    { label: "Average", value: `${average.toFixed(1)}%`, hint: "Across released courses" },
+    {
+      label: "Strongest result",
+      value: best ? `${best.percentage}%` : "—",
+      hint: best ? `${best.course_code} · ${best.letter_grade}` : "No results yet",
+    },
+    { label: "Terms", value: termCount, hint: "With released grades" },
+  ];
+
   return (
     <section
       className="dashboard-layout"
@@ -50,6 +70,21 @@ export default function StudentDashboard() {
           {grades.length} released {grades.length === 1 ? "grade" : "grades"}
         </span>
       </div>
+
+      {!loading && !error && grades.length > 0 && (
+        <div className="stat-grid">
+          {stats.map((stat, index) => (
+            <article
+              className={`stat-card ${index === 0 ? "stat-card--accent" : ""}`}
+              key={stat.label}
+            >
+              <span className="stat-label">{stat.label}</span>
+              <strong className="stat-value">{stat.value}</strong>
+              <span className="stat-hint">{stat.hint}</span>
+            </article>
+          ))}
+        </div>
+      )}
 
       {error ? (
         <div className="dashboard-message">
