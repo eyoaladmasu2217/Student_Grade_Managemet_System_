@@ -78,8 +78,19 @@ export default function App() {
   if (sessionState === "loading") {
     return (
       <main className="loading-screen" aria-live="polite" aria-busy="true">
-        <span className="loading-indicator" aria-hidden="true" />
-        Loading your workspace...
+        <div className="loading-shell">
+          <span className="loading-indicator" aria-hidden="true" />
+          <p className="loading-copy">Loading your workspace...</p>
+          <div className="skeleton-grid" aria-hidden="true">
+            <span className="skeleton skeleton-stat" />
+            <span className="skeleton skeleton-stat" />
+            <span className="skeleton skeleton-stat" />
+          </div>
+          <div className="skeleton-grid skeleton-grid--panels" aria-hidden="true">
+            <span className="skeleton skeleton-panel" />
+            <span className="skeleton skeleton-panel" />
+          </div>
+        </div>
       </main>
     );
   }

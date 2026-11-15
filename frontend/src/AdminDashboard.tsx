@@ -276,9 +276,21 @@ export default function AdminDashboard() {
       )}
 
       {loading ? (
-        <p className="empty-state" role="status" aria-live="polite">
-          Loading academic setup...
-        </p>
+        <>
+          <div className="stat-grid" aria-hidden="true">
+            {[0, 1, 2, 3, 4].map((index) => (
+              <span className="skeleton skeleton-stat" key={index} />
+            ))}
+          </div>
+          <div className="dashboard-grid" aria-hidden="true">
+            {[0, 1, 2, 3].map((index) => (
+              <span className="skeleton skeleton-panel" key={index} />
+            ))}
+          </div>
+          <p className="visually-hidden" role="status" aria-live="polite">
+            Loading academic setup...
+          </p>
+        </>
       ) : loadError ? (
         <div className="panel">
           <p className="form-error" role="alert">{loadError}</p>

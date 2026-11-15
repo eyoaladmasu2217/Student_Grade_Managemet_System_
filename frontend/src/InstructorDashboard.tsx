@@ -278,9 +278,17 @@ export default function InstructorDashboard() {
       {message && <p className="success-message dashboard-message" role="status">{message}</p>}
 
       {sectionsLoading ? (
-        <p className="empty-state" role="status" aria-live="polite">
-          Loading assigned sections...
-        </p>
+        <>
+          <span className="skeleton skeleton-section" aria-hidden="true" />
+          <div className="stat-grid" aria-hidden="true">
+            {[0, 1, 2, 3].map((index) => (
+              <span className="skeleton skeleton-stat" key={index} />
+            ))}
+          </div>
+          <p className="visually-hidden" role="status" aria-live="polite">
+            Loading assigned sections...
+          </p>
+        </>
       ) : sectionError ? null : !sectionId ? (
         <section className="panel empty-panel">
           <h2>No assigned sections</h2>
@@ -319,9 +327,16 @@ export default function InstructorDashboard() {
           )}
 
           {loading ? (
-            <p className="empty-state" role="status" aria-live="polite">
-              Loading gradebook, roster, and correction history...
-            </p>
+            <>
+              <div className="dashboard-grid" aria-hidden="true">
+                <span className="skeleton skeleton-panel" />
+                <span className="skeleton skeleton-panel" />
+              </div>
+              <span className="skeleton skeleton-section" aria-hidden="true" />
+              <p className="visually-hidden" role="status" aria-live="polite">
+                Loading gradebook, roster, and correction history...
+              </p>
+            </>
           ) : (
           <>
           <div className="dashboard-grid">

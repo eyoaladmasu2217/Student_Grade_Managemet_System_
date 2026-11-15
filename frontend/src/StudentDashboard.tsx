@@ -99,9 +99,16 @@ export default function StudentDashboard() {
           </button>
         </div>
       ) : loading ? (
-        <p className="empty-state" role="status" aria-live="polite">
-          Loading your grades...
-        </p>
+        <>
+          <div className="student-grade-grid" aria-hidden="true">
+            <span className="skeleton skeleton-grade-card" />
+            <span className="skeleton skeleton-grade-card" />
+            <span className="skeleton skeleton-grade-card" />
+          </div>
+          <p className="visually-hidden" role="status" aria-live="polite">
+            Loading your grades...
+          </p>
+        </>
       ) : grades.length === 0 ? (
         <section className="panel empty-panel">
           <h2>No released grades yet</h2>

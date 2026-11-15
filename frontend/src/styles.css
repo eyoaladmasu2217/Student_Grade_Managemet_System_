@@ -746,16 +746,86 @@ textarea:focus {
 
 .loading-screen {
   gap: 12px;
-  color: #69758b;
+  color: var(--color-muted);
   font-size: 14px;
   text-align: center;
+}
+
+.loading-shell {
+  display: grid;
+  width: min(100%, 760px);
+  justify-items: center;
+  gap: 14px;
+}
+
+.loading-copy {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.skeleton-grid {
+  display: grid;
+  width: 100%;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.skeleton-grid--panels {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.skeleton {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  background: #eef1f8;
+}
+
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.68),
+    transparent
+  );
+  transform: translateX(-100%);
+  animation: skeleton-sweep 1.4s ease-in-out infinite;
+}
+
+.skeleton-stat {
+  height: 92px;
+  border-radius: var(--radius-md);
+}
+
+.skeleton-panel {
+  height: 220px;
+  border-radius: var(--radius-lg);
+}
+
+.skeleton-section {
+  width: 100%;
+  height: 112px;
+  margin-bottom: 16px;
+  border-radius: var(--radius-lg);
+}
+
+.skeleton-grade-card {
+  height: 210px;
+  border-radius: var(--radius-lg);
 }
 
 .loading-indicator {
   width: 22px;
   height: 22px;
   border: 2px solid #dfe5ef;
-  border-top-color: #4667b2;
+  border-top-color: var(--color-brand);
   border-radius: 50%;
   animation: loading-spin 700ms linear infinite;
 }
@@ -763,6 +833,12 @@ textarea:focus {
 @keyframes loading-spin {
   to {
     transform: rotate(360deg);
+  }
+}
+
+@keyframes skeleton-sweep {
+  100% {
+    transform: translateX(100%);
   }
 }
 
