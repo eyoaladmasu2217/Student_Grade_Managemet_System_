@@ -372,7 +372,7 @@ h2 {
 
 @media (max-width: 720px) {
   .app-shell {
-    width: min(100% - 32px, 540px);
+    width: min(100% - 32px, 640px);
   }
 
   .welcome {
@@ -1618,6 +1618,56 @@ textarea:focus {
   clip-path: inset(50%);
 }
 
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 110px;
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dashboard-heading,
+.stat-grid,
+.section-summary,
+.panel,
+.student-grade-card {
+  animation: rise-in 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.stat-grid {
+  animation-delay: 60ms;
+}
+
+.dashboard-grid .panel:nth-child(2) {
+  animation-delay: 70ms;
+}
+
+.dashboard-grid .panel:nth-child(3) {
+  animation-delay: 110ms;
+}
+
+.dashboard-grid .panel:nth-child(4) {
+  animation-delay: 150ms;
+}
+
+@media (hover: none) {
+  .panel:hover,
+  .feature-card:hover,
+  .student-grade-card:hover {
+    transform: none;
+    border-color: var(--color-border);
+    box-shadow: var(--shadow-sm);
+  }
+}
+
 @media (max-width: 920px) {
   .login-layout {
     grid-template-columns: 1fr;
@@ -1635,14 +1685,85 @@ textarea:focus {
   }
 }
 
+@media (max-width: 720px) {
+  html {
+    scroll-padding-top: 96px;
+  }
+
+  .topbar {
+    flex-wrap: wrap;
+    padding: 10px 14px;
+  }
+
+  .account-menu {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .account-actions {
+    margin-left: auto;
+  }
+
+  .stat-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .skeleton-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .skeleton-grid--panels {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-layout {
+    padding-top: 30px;
+  }
+
+  .section-summary {
+    padding: 22px;
+  }
+
+  .readiness {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}
+
 @media (max-width: 560px) {
   .login-card,
   .notice-card {
     padding: 24px;
   }
 
+  .topbar {
+    top: 8px;
+    margin-top: 8px;
+    border-radius: var(--radius-md);
+  }
+
   .account-details {
     display: none;
+  }
+
+  .account-menu {
+    gap: 8px;
+  }
+
+  .account-actions {
+    gap: 6px;
+  }
+
+  .account-actions .secondary-button {
+    flex: 1;
+  }
+
+  .stat-card {
+    padding: 15px;
+  }
+
+  .stat-value {
+    font-size: 25px;
   }
 
   .dashboard-grid {
@@ -1652,6 +1773,10 @@ textarea:focus {
   .dashboard-heading {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .dashboard-heading h1 {
+    font-size: 30px;
   }
 
   .section-summary {
@@ -1669,6 +1794,29 @@ textarea:focus {
 
   .password-form {
     grid-template-columns: 1fr;
+  }
+
+  .student-grade-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .empty-panel {
+    padding: 30px 20px;
+  }
+}
+
+@media (max-width: 420px) {
+  .stat-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .account-actions .secondary-button {
+    padding: 6px 10px;
+    font-size: 10.5px;
+  }
+
+  .term-pill {
+    align-self: flex-start;
   }
 }
 
