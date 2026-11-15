@@ -407,22 +407,164 @@ h2 {
   }
 }
 
-.login-layout,
+.login-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(360px, 0.95fr);
+  width: min(1120px, 100%);
+  min-height: 100vh;
+  align-items: center;
+  gap: 26px;
+  margin: 0 auto;
+  padding: 40px 24px;
+}
+
+.login-showcase {
+  position: relative;
+  display: flex;
+  min-height: 640px;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 34px;
+  overflow: hidden;
+  padding: 42px;
+  border-radius: var(--radius-xl);
+  background: linear-gradient(150deg, #111836 0%, #232f78 52%, #3a2f8f 100%);
+  box-shadow: var(--shadow-lg);
+  color: #eef1ff;
+  isolation: isolate;
+}
+
+.showcase-aurora {
+  position: absolute;
+  inset: -35%;
+  z-index: -1;
+  background:
+    radial-gradient(circle at 22% 20%, rgba(124, 92, 255, 0.55), transparent 42%),
+    radial-gradient(circle at 82% 12%, rgba(76, 110, 245, 0.5), transparent 40%),
+    radial-gradient(circle at 68% 88%, rgba(12, 166, 120, 0.28), transparent 42%);
+  filter: blur(6px);
+}
+
+.showcase-topline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.showcase-badge,
+.showcase-term {
+  display: inline-flex;
+  align-items: center;
+  padding: 7px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.showcase-term {
+  border-color: transparent;
+  background: transparent;
+  color: rgba(238, 241, 255, 0.62);
+}
+
+.showcase-copy h2 {
+  max-width: 420px;
+  margin-bottom: 14px;
+  color: #fff;
+  font-size: clamp(30px, 3.4vw, 42px);
+  font-weight: 800;
+  letter-spacing: -0.045em;
+  line-height: 1.08;
+}
+
+.showcase-copy p {
+  max-width: 420px;
+  margin-bottom: 0;
+  color: rgba(238, 241, 255, 0.72);
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.showcase-list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.showcase-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 14px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(8px);
+}
+
+.showcase-icon {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.showcase-list strong {
+  display: block;
+  margin-bottom: 3px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.showcase-list div span {
+  color: rgba(238, 241, 255, 0.66);
+  font-size: 11.5px;
+  line-height: 1.55;
+}
+
+.showcase-footer {
+  margin: 0;
+  color: rgba(238, 241, 255, 0.5);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+}
+
+.login-card {
+  width: 100%;
+  padding: 44px;
+  border: 1px solid rgba(228, 232, 244, 0.9);
+  border-radius: var(--radius-xl);
+  background: #fff;
+  box-shadow: var(--shadow-md);
+}
+
+.notice-card {
+  width: min(100%, 440px);
+  padding: 36px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: #fff;
+  box-shadow: var(--shadow-md);
+}
+
 .loading-screen {
   display: grid;
   min-height: 100vh;
   place-items: center;
   padding: 24px;
-}
-
-.login-card,
-.notice-card {
-  width: min(100%, 440px);
-  padding: 36px;
-  border: 1px solid #e8ecf3;
-  border-radius: 20px;
-  background: #fff;
-  box-shadow: 0 16px 50px rgba(34, 54, 95, 0.08);
 }
 
 .login-brand {
@@ -432,7 +574,8 @@ h2 {
 .login-card h1,
 .notice-card h1 {
   margin-bottom: 10px;
-  font-size: 32px;
+  font-size: 34px;
+  letter-spacing: -0.04em;
 }
 
 .login-description,
@@ -1073,6 +1216,17 @@ textarea:focus {
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   clip-path: inset(50%);
+}
+
+@media (max-width: 920px) {
+  .login-layout {
+    grid-template-columns: 1fr;
+    padding: 24px;
+  }
+
+  .login-showcase {
+    display: none;
+  }
 }
 
 @media (max-width: 800px) {
