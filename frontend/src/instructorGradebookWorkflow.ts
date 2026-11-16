@@ -44,6 +44,7 @@ export function createInstructorGradebookWorkflow(
 ) {
   let state = emptyState;
   let loadVersion = 0;
+  let selectionVersion = 0;
   const listeners = new Set<() => void>();
 
   function update(patch: Partial<InstructorGradebookState>) {
@@ -80,6 +81,7 @@ export function createInstructorGradebookWorkflow(
     successMessage: string,
     fieldErrorKey = "",
   ): Promise<boolean> {
+    const version = selectionVersion;
     update({
       error: "",
       message: "",
@@ -90,10 +92,12 @@ export function createInstructorGradebookWorkflow(
     });
     try {
       await action();
+      if (version !== selectionVersion) return true;
       update({ message: successMessage });
       await loadSelectedSection();
       return true;
     } catch (error) {
+      if (version !== selectionVersion) return false;
       const message = messageOf(error);
       if (fieldErrorKey) {
         update({ fieldErrors: { ...state.fieldErrors, [fieldErrorKey]: message } });
@@ -102,7 +106,7 @@ export function createInstructorGradebookWorkflow(
       }
       return false;
     } finally {
-      update({ working: false });
+      if (version === selectionVersion) update({ working: false });
     }
   }
 
@@ -113,6 +117,7 @@ export function createInstructorGradebookWorkflow(
       return () => listeners.delete(listener);
     },
     async selectSection(sectionId: string) {
+      selectionVersion += 1;
       loadVersion += 1;
       update({
         ...emptyState,
