@@ -213,6 +213,7 @@ def test_admin_can_create_course_section(client: TestClient, tmp_path) -> None:
 
     assert section_response.status_code == 201
     assert section_response.json()["section_code"] == "A"
+    assert section_response.json()["academic_year_name"] == "2026-2027"
     assert section_response.json()["instructor_name"] == "Course Instructor"
 
 
@@ -750,7 +751,9 @@ def test_students_only_see_final_grades_after_instructor_release(
     assert grade_response.status_code == 200
     assert grade_response.json()["percentage"] == 92
     assert grade_response.json()["letter_grade"] == "A"
+    assert grade_response.json()["term_id"] == term_response.json()["id"]
     assert len(all_grades_response.json()) == 1
+    assert all_grades_response.json()[0]["term_id"] == term_response.json()["id"]
 
 
 def test_instructor_cannot_release_incomplete_gradebook(client: TestClient, tmp_path) -> None:

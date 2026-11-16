@@ -254,7 +254,7 @@ export default function InstructorDashboard() {
             <select value={sectionId} onChange={(event) => setSectionId(event.target.value)}>
               {sections.map((item) => (
                 <option key={item.id} value={item.id}>
-                  {item.course_code} · {item.section_code} · {item.term_name}
+                  {item.course_code} · {item.section_code} · {item.academic_year_name} · {item.term_name}
                 </option>
               ))}
             </select>
@@ -298,7 +298,11 @@ export default function InstructorDashboard() {
         <>
           <section className="section-summary">
             <div>
-              <p className="eyebrow">{section?.term_name ?? "COURSE SECTION"}</p>
+              <p className="eyebrow">
+                {section
+                  ? `${section.academic_year_name} · ${section.term_name}`
+                  : "COURSE SECTION"}
+              </p>
               <h2>{section?.course_code} · {section?.course_title}</h2>
               <p className="panel-note">Section {section?.section_code}</p>
             </div>

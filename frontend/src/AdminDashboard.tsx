@@ -9,6 +9,7 @@ import {
   Term,
   User,
 } from "./api";
+import { loadAllUsers } from "./adminUsers";
 
 interface AdminData {
   years: AcademicYear[];
@@ -50,7 +51,7 @@ export default function AdminDashboard() {
         const [years, courses, users, sections, gradeBands] = await Promise.all([
           apiRequest<AcademicYear[]>("/api/academic-years"),
           apiRequest<Course[]>("/api/courses"),
-          apiRequest<User[]>("/api/users?limit=200"),
+          loadAllUsers(),
           apiRequest<Section[]>("/api/sections"),
           apiRequest<GradeBand[]>("/api/grade-scale"),
         ]);
@@ -472,7 +473,7 @@ export default function AdminDashboard() {
             {data.sections.slice(0, 6).map((section) => (
               <li key={section.id}>
                 <strong>{section.course_code} · Section {section.section_code}</strong>
-                <span>{section.term_name} · {section.instructor_name}</span>
+                <span>{section.academic_year_name} · {section.term_name} · {section.instructor_name}</span>
               </li>
             ))}
             {data.sections.length === 0 && <li className="empty-state">No sections yet.</li>}
@@ -488,7 +489,7 @@ export default function AdminDashboard() {
                 <option value="">Select a section</option>
                 {data.sections.map((section) => (
                   <option key={section.id} value={section.id}>
-                    {section.course_code} · {section.section_code} · {section.term_name}
+                    {section.course_code} · {section.section_code} · {section.academic_year_name} · {section.term_name}
                   </option>
                 ))}
               </select>
@@ -515,7 +516,9 @@ export default function AdminDashboard() {
 
         <article className="panel">
           <h2>Letter-grade scale</h2>
-          <p className="panel-note">Set the minimum percentage required for each grade.</p>
+          <p className="panel-note">
+            Set each grade minimum. Keep at least two bands, including one starting at 0%.
+          </p>
           <form className="form-grid" onSubmit={saveGradeScale}>
             <div className="grade-band-editor">
               {data.gradeBands.map((band, index) => (
@@ -546,6 +549,7 @@ export default function AdminDashboard() {
                   <button
                     className="text-button text-button--danger"
                     type="button"
+                    disabled={working || data.gradeBands.length <= 2}
                     onClick={() =>
                       setData((current) => ({
                         ...current,

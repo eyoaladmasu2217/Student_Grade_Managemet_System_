@@ -41,7 +41,7 @@ export default function StudentDashboard() {
     (top, grade) => (!top || grade.percentage > top.percentage ? grade : top),
     null,
   );
-  const termCount = new Set(grades.map((grade) => grade.term_name)).size;
+  const termCount = new Set(grades.map((grade) => grade.term_id)).size;
   const stats = [
     { label: "Released grades", value: grades.length, hint: "Published results" },
     { label: "Average", value: `${average.toFixed(1)}%`, hint: "Across released courses" },

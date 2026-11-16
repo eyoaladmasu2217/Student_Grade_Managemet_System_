@@ -36,6 +36,7 @@ export interface Section {
   course_title: string;
   term_id: number;
   term_name: string;
+  academic_year_name: string;
   academic_year_id: number;
   instructor_id: number;
   instructor_name: string;
@@ -96,6 +97,7 @@ export interface Gradebook {
 
 export interface ReleasedGrade {
   section_id: number;
+  term_id: number;
   course_code: string;
   course_title: string;
   section_code: string;
