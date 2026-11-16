@@ -96,6 +96,7 @@ export interface Gradebook {
 
 export interface ReleasedGrade {
   section_id: number;
+  term_id: number;
   course_code: string;
   course_title: string;
   section_code: string;

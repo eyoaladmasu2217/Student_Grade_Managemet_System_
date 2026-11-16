@@ -16,6 +16,7 @@ router = APIRouter(tags=["grade release"])
 
 class ReleasedGradeResponse(BaseModel):
     section_id: int
+    term_id: int
     course_code: str
     course_title: str
     section_code: str
@@ -134,7 +135,8 @@ def get_my_released_grade(
 
     row = connection.execute(
         """
-        SELECT released_grades.section_id, courses.code AS course_code,
+        SELECT released_grades.section_id, sections.term_id,
+               courses.code AS course_code,
                courses.title AS course_title, sections.section_code,
                terms.name AS term_name, released_grades.percentage,
                released_grades.letter_grade, section_releases.released_at
@@ -165,7 +167,8 @@ def list_my_released_grades(
 ) -> list[ReleasedGradeResponse]:
     rows = connection.execute(
         """
-        SELECT released_grades.section_id, courses.code AS course_code,
+        SELECT released_grades.section_id, sections.term_id,
+               courses.code AS course_code,
                courses.title AS course_title, sections.section_code,
                terms.name AS term_name, released_grades.percentage,
                released_grades.letter_grade, section_releases.released_at
