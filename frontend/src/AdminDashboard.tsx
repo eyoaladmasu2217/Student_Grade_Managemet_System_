@@ -9,6 +9,7 @@ import {
   Term,
   User,
 } from "./api";
+import { loadAllUsers } from "./adminUsers";
 
 interface AdminData {
   years: AcademicYear[];
@@ -50,7 +51,7 @@ export default function AdminDashboard() {
         const [years, courses, users, sections, gradeBands] = await Promise.all([
           apiRequest<AcademicYear[]>("/api/academic-years"),
           apiRequest<Course[]>("/api/courses"),
-          apiRequest<User[]>("/api/users?limit=200"),
+          loadAllUsers(),
           apiRequest<Section[]>("/api/sections"),
           apiRequest<GradeBand[]>("/api/grade-scale"),
         ]);
