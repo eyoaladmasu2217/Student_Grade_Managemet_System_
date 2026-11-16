@@ -22,7 +22,10 @@ export function gradeTone(letter: string | null | undefined): GradeTone {
   if (code.startsWith("D")) {
     return "pass";
   }
-  return "risk";
+  if (code.startsWith("F")) {
+    return "risk";
+  }
+  return "neutral";
 }
 
 export function clampPercentage(value: number): number {

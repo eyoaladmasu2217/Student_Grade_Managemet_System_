@@ -8,6 +8,8 @@ describe("gradeTone", () => {
     expect(gradeTone("C-")).toBe("fair");
     expect(gradeTone("D")).toBe("pass");
     expect(gradeTone("F")).toBe("risk");
+    expect(gradeTone("HD")).toBe("neutral");
+    expect(gradeTone("P")).toBe("neutral");
   });
 
   it("treats missing grades as neutral", () => {
