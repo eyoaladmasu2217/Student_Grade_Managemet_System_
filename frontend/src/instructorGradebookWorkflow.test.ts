@@ -99,6 +99,62 @@ describe("instructor gradebook workflow", () => {
     });
   });
 
+  it("does not show a completed write in a newly selected section", async () => {
+    let resolveWrite: (value: unknown) => void = () => {};
+    const writeResponse = new Promise<unknown>((resolve) => {
+      resolveWrite = resolve;
+    });
+    const request = controlledRequest(async (path, init) => {
+      if (path === "/api/sections/7/categories" && init.method === "POST") {
+        return writeResponse;
+      }
+      if (path.endsWith("/gradebook")) return gradebook();
+      return [];
+    });
+    const workflow = createInstructorGradebookWorkflow(request);
+    await workflow.selectSection("7");
+
+    const writing = workflow.createCategory("Exams", 40);
+    await workflow.selectSection("8");
+    resolveWrite({});
+
+    expect(await writing).toBe(true);
+    expect(workflow.getSnapshot()).toMatchObject({
+      sectionId: "8",
+      message: "",
+      error: "",
+      working: false,
+    });
+  });
+
+  it("does not show a failed write in a newly selected section", async () => {
+    let rejectWrite: (reason?: unknown) => void = () => {};
+    const writeResponse = new Promise<unknown>((_, reject) => {
+      rejectWrite = reject;
+    });
+    const request = controlledRequest(async (path, init) => {
+      if (path === "/api/sections/7/categories" && init.method === "POST") {
+        return writeResponse;
+      }
+      if (path.endsWith("/gradebook")) return gradebook();
+      return [];
+    });
+    const workflow = createInstructorGradebookWorkflow(request);
+    await workflow.selectSection("7");
+
+    const writing = workflow.createCategory("Exams", 40);
+    await workflow.selectSection("8");
+    rejectWrite(new Error("Category could not be saved."));
+
+    expect(await writing).toBe(false);
+    expect(workflow.getSnapshot()).toMatchObject({
+      sectionId: "8",
+      message: "",
+      error: "",
+      working: false,
+    });
+  });
+
   it("records released-score corrections through the correction endpoint", async () => {
     const calls: Array<{ path: string; init: RequestInit }> = [];
     const request = controlledRequest(async (path, init) => {
