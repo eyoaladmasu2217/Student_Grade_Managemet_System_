@@ -473,7 +473,7 @@ export default function AdminDashboard() {
             {data.sections.slice(0, 6).map((section) => (
               <li key={section.id}>
                 <strong>{section.course_code} · Section {section.section_code}</strong>
-                <span>{section.term_name} · {section.instructor_name}</span>
+                <span>{section.academic_year_name} · {section.term_name} · {section.instructor_name}</span>
               </li>
             ))}
             {data.sections.length === 0 && <li className="empty-state">No sections yet.</li>}
@@ -489,7 +489,7 @@ export default function AdminDashboard() {
                 <option value="">Select a section</option>
                 {data.sections.map((section) => (
                   <option key={section.id} value={section.id}>
-                    {section.course_code} · {section.section_code} · {section.term_name}
+                    {section.course_code} · {section.section_code} · {section.academic_year_name} · {section.term_name}
                   </option>
                 ))}
               </select>

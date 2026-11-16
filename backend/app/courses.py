@@ -61,6 +61,7 @@ class SectionResponse(BaseModel):
     course_title: str
     term_id: int
     term_name: str
+    academic_year_name: str
     academic_year_id: int
     instructor_id: int
     instructor_name: str
@@ -71,11 +72,13 @@ def section_query() -> str:
     return """
         SELECT sections.id, sections.course_id, courses.code AS course_code,
                courses.title AS course_title, sections.term_id, terms.name AS term_name,
-               terms.academic_year_id, sections.instructor_id,
+               academic_years.name AS academic_year_name, terms.academic_year_id,
+               sections.instructor_id,
                users.full_name AS instructor_name, sections.section_code
         FROM sections
         JOIN courses ON courses.id = sections.course_id
         JOIN terms ON terms.id = sections.term_id
+        JOIN academic_years ON academic_years.id = terms.academic_year_id
         JOIN users ON users.id = sections.instructor_id
     """
 

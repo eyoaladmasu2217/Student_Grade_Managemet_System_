@@ -213,6 +213,7 @@ def test_admin_can_create_course_section(client: TestClient, tmp_path) -> None:
 
     assert section_response.status_code == 201
     assert section_response.json()["section_code"] == "A"
+    assert section_response.json()["academic_year_name"] == "2026-2027"
     assert section_response.json()["instructor_name"] == "Course Instructor"
 
 

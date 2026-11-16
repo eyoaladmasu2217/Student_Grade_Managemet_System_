@@ -36,6 +36,7 @@ export interface Section {
   course_title: string;
   term_id: number;
   term_name: string;
+  academic_year_name: string;
   academic_year_id: number;
   instructor_id: number;
   instructor_name: string;
