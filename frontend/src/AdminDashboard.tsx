@@ -516,7 +516,9 @@ export default function AdminDashboard() {
 
         <article className="panel">
           <h2>Letter-grade scale</h2>
-          <p className="panel-note">Set the minimum percentage required for each grade.</p>
+          <p className="panel-note">
+            Set each grade minimum. Keep at least two bands, including one starting at 0%.
+          </p>
           <form className="form-grid" onSubmit={saveGradeScale}>
             <div className="grade-band-editor">
               {data.gradeBands.map((band, index) => (
@@ -547,6 +549,7 @@ export default function AdminDashboard() {
                   <button
                     className="text-button text-button--danger"
                     type="button"
+                    disabled={working || data.gradeBands.length <= 2}
                     onClick={() =>
                       setData((current) => ({
                         ...current,
