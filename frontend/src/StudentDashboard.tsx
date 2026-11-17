@@ -1,12 +1,15 @@
 import { useEffect, useState } from "react";
 import { apiRequest, ReleasedGrade } from "./api";
 import { clampPercentage, gradeTone } from "./gradeDisplay";
+import { filterReleasedGrades } from "./studentGradeFilters";
 
 export default function StudentDashboard() {
   const [grades, setGrades] = useState<ReleasedGrade[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [reloadKey, setReloadKey] = useState(0);
+  const [search, setSearch] = useState("");
+  const [selectedTerm, setSelectedTerm] = useState("all");
 
   useEffect(() => {
     let active = true;
@@ -42,6 +45,14 @@ export default function StudentDashboard() {
     null,
   );
   const termCount = new Set(grades.map((grade) => grade.term_id)).size;
+  const terms = Array.from(
+    new Map(grades.map((grade) => [grade.term_id, grade.term_name])).entries(),
+  );
+  const visibleGrades = filterReleasedGrades(
+    grades,
+    search,
+    selectedTerm === "all" ? null : Number(selectedTerm),
+  );
   const stats = [
     { label: "Released grades", value: grades.length, hint: "Published results" },
     { label: "Average", value: `${average.toFixed(1)}%`, hint: "Across released courses" },
@@ -87,6 +98,34 @@ export default function StudentDashboard() {
         </div>
       )}
 
+      {!loading && !error && grades.length > 0 && (
+        <div className="student-grade-filters">
+          <label>
+            Search grades
+            <input
+              type="search"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Course, section, or term"
+            />
+          </label>
+          <label>
+            Filter by term
+            <select
+              value={selectedTerm}
+              onChange={(event) => setSelectedTerm(event.target.value)}
+            >
+              <option value="all">All terms</option>
+              {terms.map(([termId, termName]) => (
+                <option key={termId} value={termId}>
+                  {termName}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+      )}
+
       {error ? (
         <div className="dashboard-message">
           <p className="form-error" role="alert">{error}</p>
@@ -114,9 +153,24 @@ export default function StudentDashboard() {
           <h2>No released grades yet</h2>
           <p>Your released course results will appear here.</p>
         </section>
+      ) : visibleGrades.length === 0 ? (
+        <section className="panel empty-panel">
+          <h2>No matching grades</h2>
+          <p>Try a different search or term filter.</p>
+          <button
+            className="secondary-button"
+            type="button"
+            onClick={() => {
+              setSearch("");
+              setSelectedTerm("all");
+            }}
+          >
+            Clear filters
+          </button>
+        </section>
       ) : (
         <div className="student-grade-grid">
-          {grades.map((grade) => {
+          {visibleGrades.map((grade) => {
             const tone = gradeTone(grade.letter_grade);
             return (
               <article className="student-grade-card" key={grade.section_id}>
