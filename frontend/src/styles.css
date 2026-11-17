@@ -1375,6 +1375,21 @@ textarea:focus {
   gap: 14px;
 }
 
+.student-grade-filters {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(180px, 260px);
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.student-grade-filters label {
+  display: grid;
+  gap: 7px;
+  color: var(--color-ink-soft);
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
 .student-grade-card {
   display: grid;
   min-height: 210px;
@@ -1797,6 +1812,10 @@ html {
   }
 
   .student-grade-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .student-grade-filters {
     grid-template-columns: 1fr;
   }
 
