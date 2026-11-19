@@ -182,6 +182,10 @@ export default function App() {
         {user.role === "admin" && <AdminDashboard />}
         {user.role === "instructor" && <InstructorDashboard />}
         {user.role === "student" && <StudentDashboard />}
+        <footer className="app-footer">
+          <span>BITS College · Student Grade Management System</span>
+          <span>For account help, contact your academic administrator.</span>
+        </footer>
       </main>
     </>
   );
