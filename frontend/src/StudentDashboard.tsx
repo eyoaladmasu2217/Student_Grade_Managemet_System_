@@ -128,6 +128,10 @@ export default function StudentDashboard() {
               ))}
             </select>
           </label>
+          <p className="panel-note filter-status" role="status" aria-live="polite">
+            Showing {visibleGrades.length} of {grades.length} released{" "}
+            {grades.length === 1 ? "grade" : "grades"}
+          </p>
         </div>
       )}
 

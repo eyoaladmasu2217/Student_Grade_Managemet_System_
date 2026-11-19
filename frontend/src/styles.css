@@ -1403,6 +1403,11 @@ textarea:focus {
   margin-bottom: 16px;
 }
 
+.filter-status {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+
 .student-grade-filters label {
   display: grid;
   gap: 7px;
