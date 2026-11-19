@@ -77,7 +77,12 @@ export default function App() {
 
   if (sessionState === "loading") {
     return (
-      <main className="loading-screen" aria-live="polite" aria-busy="true">
+      <main
+        id="main-content"
+        className="loading-screen"
+        aria-live="polite"
+        aria-busy="true"
+      >
         <div className="loading-shell">
           <span className="loading-indicator" aria-hidden="true" />
           <p className="loading-copy">Loading your workspace...</p>
@@ -97,7 +102,7 @@ export default function App() {
 
   if (sessionState === "unavailable") {
     return (
-      <main className="loading-screen">
+      <main id="main-content" className="loading-screen">
         <section className="notice-card">
           <p className="eyebrow">CONNECTION ISSUE</p>
           <h1>We could not load your workspace.</h1>
@@ -111,64 +116,73 @@ export default function App() {
   }
 
   if (!user) {
-    return <LoginPage onLogin={(signedInUser) => {
-      setUser(signedInUser);
-      setSessionState("signed-in");
-    }} />;
+    return (
+      <LoginPage
+        onLogin={(signedInUser) => {
+          setUser(signedInUser);
+          setSessionState("signed-in");
+        }}
+      />
+    );
   }
 
   return (
-    <main className="app-shell">
-      <header className="topbar">
-        <a className="brand" href="/" aria-label="BITS College gradebook home">
-          <span className="brand-mark" aria-hidden="true">B</span>
-          <span className="brand-copy">
-            <strong>BITS College</strong>
-            <small>Academic services</small>
-          </span>
-        </a>
-        <div className="account-menu">
-          <span className="account-chip">
-            <span className="avatar" aria-hidden="true">{initialsOf(user.full_name)}</span>
-            <span className="account-details">
-              <strong>{user.full_name}</strong>
-              <small>{roleLabels[user.role]}</small>
+    <>
+      <a className="skip-link" href="#main-content">
+        Skip to main content
+      </a>
+      <main id="main-content" className="app-shell">
+        <header className="topbar">
+          <a className="brand" href="/" aria-label="BITS College gradebook home">
+            <span className="brand-mark" aria-hidden="true">B</span>
+            <span className="brand-copy">
+              <strong>BITS College</strong>
+              <small>Academic services</small>
             </span>
-          </span>
-          <div className="account-actions">
-            <button
-              className="secondary-button secondary-button--compact"
-              onClick={() => {
-                setAccountMessage("");
-                setChangingPassword((isOpen) => !isOpen);
-              }}
-            >
-              Change password
-            </button>
-            <button
-              className="secondary-button secondary-button--compact"
-              onClick={signOut}
-            >
-              Sign out
-            </button>
+          </a>
+          <div className="account-menu">
+            <span className="account-chip">
+              <span className="avatar" aria-hidden="true">{initialsOf(user.full_name)}</span>
+              <span className="account-details">
+                <strong>{user.full_name}</strong>
+                <small>{roleLabels[user.role]}</small>
+              </span>
+            </span>
+            <div className="account-actions">
+              <button
+                className="secondary-button secondary-button--compact"
+                onClick={() => {
+                  setAccountMessage("");
+                  setChangingPassword((isOpen) => !isOpen);
+                }}
+              >
+                Change password
+              </button>
+              <button
+                className="secondary-button secondary-button--compact"
+                onClick={signOut}
+              >
+                Sign out
+              </button>
+            </div>
           </div>
-        </div>
-      </header>
+        </header>
 
-      {error && <p className="form-error global-error" role="alert">{error}</p>}
-      {accountMessage && <p className="success-message global-error" role="status">{accountMessage}</p>}
-      {changingPassword && (
-        <PasswordChangeForm
-          onCancel={() => setChangingPassword(false)}
-          onComplete={() => {
-            setChangingPassword(false);
-            setAccountMessage("Password updated. Other active sessions have been signed out.");
-          }}
-        />
-      )}
-      {user.role === "admin" && <AdminDashboard />}
-      {user.role === "instructor" && <InstructorDashboard />}
-      {user.role === "student" && <StudentDashboard />}
-    </main>
+        {error && <p className="form-error global-error" role="alert">{error}</p>}
+        {accountMessage && <p className="success-message global-error" role="status">{accountMessage}</p>}
+        {changingPassword && (
+          <PasswordChangeForm
+            onCancel={() => setChangingPassword(false)}
+            onComplete={() => {
+              setChangingPassword(false);
+              setAccountMessage("Password updated. Other active sessions have been signed out.");
+            }}
+          />
+        )}
+        {user.role === "admin" && <AdminDashboard />}
+        {user.role === "instructor" && <InstructorDashboard />}
+        {user.role === "student" && <StudentDashboard />}
+      </main>
+    </>
   );
 }
