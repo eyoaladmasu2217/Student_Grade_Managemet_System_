@@ -441,7 +441,15 @@ export default function InstructorDashboard() {
               {!gradebook?.grades_released ? (
                 <button
                   className="primary-button"
-                  onClick={workflow.releaseGrades}
+                  onClick={() => {
+                    if (
+                      window.confirm(
+                        "Release final grades for this section? Students will be able to view them immediately.",
+                      )
+                    ) {
+                      void workflow.releaseGrades();
+                    }
+                  }}
                   disabled={!releaseReadiness.canRelease || working}
                 >
                   {working ? "Working..." : "Release final grades"}
