@@ -1901,3 +1901,38 @@ html {
     transition-duration: 0.01ms !important;
   }
 }
+
+@media print {
+  body {
+    background: #fff !important;
+  }
+
+  .skip-link,
+  .account-actions,
+  .app-footer,
+  .student-grade-filters,
+  .dashboard-message button,
+  button {
+    display: none !important;
+  }
+
+  .topbar {
+    position: static;
+    margin-top: 0;
+    backdrop-filter: none;
+    box-shadow: none;
+  }
+
+  .app-shell {
+    width: 100%;
+  }
+
+  .panel,
+  .student-grade-card,
+  .stat-card,
+  .section-summary,
+  .notice-card {
+    break-inside: avoid;
+    box-shadow: none;
+  }
+}
