@@ -1077,6 +1077,13 @@ textarea:focus {
   margin: 12px 0 0;
 }
 
+.field-hint {
+  color: var(--color-faint);
+  font-size: 10.5px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
 .grade-band-editor {
   display: grid;
   gap: 8px;
