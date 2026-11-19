@@ -485,7 +485,12 @@ export default function InstructorDashboard() {
                 </span>
               </div>
             )}
-            <div className="table-scroll">
+            <div
+              className="table-scroll"
+              role="region"
+              aria-label="Assessment scores table"
+              tabIndex={0}
+            >
               <table className="data-table">
                 <thead>
                   <tr>
@@ -552,7 +557,12 @@ export default function InstructorDashboard() {
               <span className="term-pill">{corrections.length} corrections</span>
             </div>
             {corrections.length > 0 ? (
-              <div className="table-scroll">
+              <div
+                className="table-scroll"
+                role="region"
+                aria-label="Grade corrections history table"
+                tabIndex={0}
+              >
                 <table className="data-table compact-table">
                   <thead>
                     <tr>

@@ -1294,6 +1294,12 @@ textarea:focus {
   box-shadow: var(--shadow-xs);
 }
 
+.table-scroll:focus-visible {
+  outline: none;
+  border-color: var(--color-brand);
+  box-shadow: var(--focus-ring);
+}
+
 .data-table {
   width: 100%;
   min-width: 760px;
