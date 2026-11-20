@@ -2163,29 +2163,66 @@ html {
   }
 }
 
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .topbar,
+  .workspace,
+  .feature-card,
+  .login-card,
+  .notice-card,
+  .loading-shell,
+  .dashboard-message,
+  .stat-card,
+  .section-summary,
+  .panel,
+  .student-grade-filters,
+  .student-grade-card,
+  .table-scroll {
+    background: rgba(255, 255, 255, 0.97);
+  }
+}
+
 @media print {
-  body {
+  body,
+  body::before,
+  body::after {
     background: #fff !important;
   }
 
+  body::before,
+  body::after,
   .skip-link,
   .account-actions,
   .app-footer,
   .student-grade-filters,
   .dashboard-message button,
-  button {
+  button,
+  .brand-mark::before,
+  .stat-card::after,
+  .section-summary::after,
+  .student-grade-card::before {
     display: none !important;
   }
 
   .topbar {
     position: static;
     margin-top: 0;
+    border-color: #d0d5dd;
+    background: #fff !important;
     backdrop-filter: none;
+    -webkit-backdrop-filter: none;
     box-shadow: none;
   }
 
   .app-shell {
     width: 100%;
+  }
+
+  .dashboard-heading,
+  .stat-grid,
+  .section-summary,
+  .panel,
+  .student-grade-card {
+    animation: none;
   }
 
   .panel,
@@ -2194,6 +2231,36 @@ html {
   .section-summary,
   .notice-card {
     break-inside: avoid;
+    border-color: #d0d5dd;
+    background: #fff !important;
     box-shadow: none;
+  }
+
+  .stat-card--accent {
+    color: var(--color-ink) !important;
+  }
+
+  .stat-card--accent .stat-label,
+  .stat-card--accent .stat-hint {
+    color: var(--color-muted) !important;
+  }
+
+  .table-scroll {
+    overflow: visible;
+    border-color: #d0d5dd;
+    background: #fff !important;
+  }
+
+  .data-table thead th {
+    position: static;
+    background: #fff !important;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
+  .grade-meter span,
+  .readiness-fill {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
   }
 }
