@@ -1100,28 +1100,30 @@ textarea:focus {
 
 .panel {
   min-width: 0;
-  padding: 24px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  background: rgba(255, 255, 255, 0.92);
+  padding: 26px;
+  border: 1px solid var(--glass-border);
+  border-radius: 22px;
+  background: linear-gradient(150deg, rgba(255, 255, 255, 0.94), rgba(255, 255, 255, 0.72));
   box-shadow: var(--shadow-sm);
-  transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+  backdrop-filter: blur(24px) saturate(150%);
+  -webkit-backdrop-filter: blur(24px) saturate(150%);
+  transition: border-color 200ms ease, box-shadow 200ms ease;
 }
 
 .panel:hover {
-  border-color: var(--color-border-strong);
-  box-shadow: var(--shadow-md);
+  border-color: #fff;
+  box-shadow: 0 22px 48px rgba(24, 36, 66, 0.1), var(--glass-inset);
 }
 
 .panel h2 {
   margin-bottom: 18px;
-  font-size: 18px;
-  letter-spacing: -0.025em;
+  font-size: 19px;
+  letter-spacing: -0.03em;
 }
 
 .form-grid {
   display: grid;
-  gap: 12px;
+  gap: 14px;
 }
 
 .form-grid .primary-button {
@@ -1137,39 +1139,42 @@ textarea:focus {
 }
 
 .nested-form {
-  margin-top: 20px;
-  padding-top: 18px;
-  border-top: 1px solid #edf0f5;
+  margin-top: 22px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(214, 221, 235, 0.7);
 }
 
 .record-list {
   display: grid;
   gap: 8px;
-  margin: 18px 0 0;
+  margin: 20px 0 0;
   padding: 0;
   list-style: none;
 }
 
 .record-list li {
   display: grid;
-  gap: 4px;
-  padding: 11px 13px;
-  border: 1px solid transparent;
-  border-radius: var(--radius-sm);
-  background: var(--surface-muted);
+  gap: 5px;
+  padding: 12px 14px;
+  border: 1px solid rgba(226, 231, 242, 0.72);
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(248, 250, 255, 0.9), rgba(255, 255, 255, 0.62));
+  box-shadow: var(--glass-inset);
   font-size: 12px;
-  transition: border-color 160ms ease, background-color 160ms ease;
+  transition: border-color 180ms ease, background-color 180ms ease, transform 180ms ease;
 }
 
 .record-list li:hover {
-  border-color: var(--color-border);
-  background: #fff;
+  transform: translateX(2px);
+  border-color: rgba(255, 255, 255, 0.95);
+  background: rgba(255, 255, 255, 0.95);
 }
 
 .record-list li strong {
   color: var(--color-ink-soft);
   font-size: 12.5px;
   font-weight: 700;
+  letter-spacing: -0.01em;
 }
 
 .record-list li span,
@@ -1177,7 +1182,7 @@ textarea:focus {
 .panel-note {
   color: var(--color-muted);
   font-size: 11px;
-  line-height: 1.55;
+  line-height: 1.6;
 }
 
 .category-info {
@@ -1228,31 +1233,32 @@ textarea:focus {
 
 .grade-band-row label {
   display: grid;
-  gap: 5px;
-  color: #65728a;
+  gap: 6px;
+  color: var(--color-ink-soft);
   font-size: 10px;
   font-weight: 700;
 }
 
 .grade-band-row input {
-  min-height: 36px;
+  min-height: 38px;
 }
 
 .text-button {
   min-height: 36px;
-  padding: 7px 8px;
+  padding: 7px 11px;
   border: 0;
-  border-radius: var(--radius-xs);
+  border-radius: 999px;
   background: transparent;
   color: var(--color-brand);
   cursor: pointer;
   font-size: 10.5px;
   font-weight: 700;
-  transition: background-color 140ms ease, color 140ms ease;
+  transition: background-color 160ms ease, color 160ms ease, transform 160ms ease;
 }
 
 .text-button:hover:not(:disabled) {
-  background: rgba(76, 110, 245, 0.08);
+  background: rgba(79, 109, 246, 0.1);
+  transform: translateY(-1px);
 }
 
 .text-button:disabled {
@@ -1291,8 +1297,8 @@ textarea:focus {
 
 .password-form label {
   display: grid;
-  gap: 7px;
-  color: #40506a;
+  gap: 8px;
+  color: var(--color-ink-soft);
   font-size: 11px;
   font-weight: 700;
 }
@@ -1305,8 +1311,8 @@ textarea:focus {
 .section-picker {
   display: grid;
   min-width: min(320px, 100%);
-  gap: 7px;
-  color: #65728a;
+  gap: 8px;
+  color: var(--color-ink-soft);
   font-size: 11px;
   font-weight: 700;
 }
@@ -1384,16 +1390,16 @@ textarea:focus {
 
 .inline-form label {
   display: grid;
-  gap: 6px;
-  color: #65728a;
+  gap: 7px;
+  color: var(--color-ink-soft);
   font-size: 10px;
   font-weight: 700;
 }
 
 .subheading {
-  margin: 26px 0 12px;
-  padding-top: 18px;
-  border-top: 1px solid var(--color-border);
+  margin: 28px 0 14px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(214, 221, 235, 0.72);
   color: var(--color-faint);
   font-family: inherit;
   font-size: 11px;
@@ -1406,8 +1412,8 @@ textarea:focus {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 18px;
+  gap: 14px;
+  margin-bottom: 20px;
 }
 
 .panel-title-row h2 {
