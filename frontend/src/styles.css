@@ -1545,15 +1545,22 @@ textarea:focus {
 
 .student-grade-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
 }
 
 .student-grade-filters {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(180px, 260px);
-  gap: 12px;
-  margin-bottom: 16px;
+  gap: 14px;
+  margin-bottom: 18px;
+  padding: 18px;
+  border: 1px solid var(--glass-border);
+  border-radius: 18px;
+  background: var(--glass-surface);
+  box-shadow: var(--shadow-sm);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
 }
 
 .filter-status {
@@ -1563,44 +1570,65 @@ textarea:focus {
 
 .student-grade-filters label {
   display: grid;
-  gap: 7px;
+  gap: 8px;
   color: var(--color-ink-soft);
   font-size: 11.5px;
   font-weight: 600;
 }
 
 .student-grade-card {
+  position: relative;
   display: grid;
-  min-height: 210px;
+  min-height: 218px;
   grid-template-columns: 1fr auto;
   align-items: start;
-  gap: 16px;
-  padding: 22px;
-  border: 1px solid #e8ecf3;
-  border-radius: 16px;
-  background: #fff;
-  box-shadow: 0 10px 32px rgba(34, 54, 95, 0.04);
-  transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+  gap: 18px;
+  overflow: hidden;
+  padding: 24px;
+  border: 1px solid var(--glass-border);
+  border-radius: 20px;
+  background: linear-gradient(150deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.7));
+  box-shadow: var(--shadow-sm);
+  transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 220ms ease,
+    border-color 220ms ease;
+}
+
+.student-grade-card::before {
+  content: "";
+  position: absolute;
+  top: -90px;
+  right: -60px;
+  width: 190px;
+  height: 190px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(79, 109, 246, 0.12), transparent 70%);
+  pointer-events: none;
+}
+
+.student-grade-card > * {
+  position: relative;
+  z-index: 1;
 }
 
 .student-grade-card:hover {
-  transform: translateY(-2px);
-  border-color: #dce3f0;
-  box-shadow: 0 14px 36px rgba(34, 54, 95, 0.08);
+  transform: translateY(-3px);
+  border-color: #fff;
+  box-shadow: 0 22px 48px rgba(24, 36, 66, 0.1), var(--glass-inset);
 }
 
 .student-grade-card .eyebrow {
-  margin-bottom: 7px;
+  margin-bottom: 8px;
 }
 
 .student-grade-card h2 {
-  margin-bottom: 4px;
-  font-size: 22px;
+  margin-bottom: 5px;
+  font-size: 24px;
+  letter-spacing: -0.04em;
 }
 
 .student-course-title {
-  margin: 0 0 8px;
-  color: #68758c;
+  margin: 0 0 9px;
+  color: var(--color-muted);
   font-size: 12px;
 }
 
@@ -1611,51 +1639,58 @@ textarea:focus {
 }
 
 .grade-result {
+  position: relative;
+  z-index: 1;
   display: grid;
-  min-width: 74px;
+  min-width: 80px;
   justify-items: center;
-  gap: 3px;
-  padding: 14px 12px;
-  border-radius: var(--radius-md);
-  background: #edf2ff;
+  gap: 4px;
+  padding: 16px 13px;
+  border: 1px solid rgba(255, 255, 255, 0.82);
+  border-radius: 16px;
+  background: rgba(237, 242, 255, 0.9);
+  box-shadow: 0 8px 20px rgba(24, 36, 66, 0.08), var(--glass-inset);
   color: #3659a7;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 
 .grade-result--excellent {
-  background: #e6f8f0;
+  background: rgba(230, 248, 240, 0.92);
   color: #0f7a58;
 }
 
 .grade-result--good {
-  background: #eaf0ff;
+  background: rgba(234, 240, 255, 0.92);
   color: #3659a7;
 }
 
 .grade-result--fair {
-  background: #fff6e0;
+  background: rgba(255, 246, 224, 0.92);
   color: #946821;
 }
 
 .grade-result--pass {
-  background: #fff0e6;
+  background: rgba(255, 240, 230, 0.92);
   color: #b25a24;
 }
 
 .grade-result--risk {
-  background: #fdeaea;
+  background: rgba(253, 234, 234, 0.92);
   color: #b23b3b;
 }
 
 .grade-result--neutral {
-  background: var(--surface-muted);
+  background: rgba(246, 248, 253, 0.9);
   color: var(--color-muted);
 }
 
 .grade-result strong {
   font-family: inherit;
-  font-size: 24px;
+  font-size: 26px;
   font-weight: 800;
-  letter-spacing: -0.03em;
+  letter-spacing: -0.04em;
+  line-height: 1;
 }
 
 .grade-result span {
@@ -1664,11 +1699,14 @@ textarea:focus {
 }
 
 .grade-meter {
+  position: relative;
+  z-index: 1;
   grid-column: 1 / -1;
-  height: 6px;
+  height: 8px;
   overflow: hidden;
   border-radius: 999px;
-  background: #eef1f8;
+  background: rgba(233, 237, 246, 0.94);
+  box-shadow: inset 0 1px 2px rgba(16, 24, 40, 0.07);
 }
 
 .grade-meter span {
@@ -1676,7 +1714,8 @@ textarea:focus {
   height: 100%;
   border-radius: inherit;
   background: var(--gradient-brand);
-  transition: width 500ms cubic-bezier(0.22, 1, 0.36, 1);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.36);
+  transition: width 560ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .grade-meter--excellent span {
@@ -1712,40 +1751,42 @@ textarea:focus {
 .grade-badge {
   display: inline-flex;
   align-items: center;
-  padding: 5px 10px;
+  padding: 6px 11px;
+  border: 1px solid rgba(255, 255, 255, 0.76);
   border-radius: 999px;
+  box-shadow: var(--glass-inset);
   font-size: 10.5px;
   font-weight: 700;
   white-space: nowrap;
 }
 
 .grade-badge--excellent {
-  background: #e6f8f0;
+  background: rgba(230, 248, 240, 0.92);
   color: #0f7a58;
 }
 
 .grade-badge--good {
-  background: #eaf0ff;
+  background: rgba(234, 240, 255, 0.92);
   color: #3659a7;
 }
 
 .grade-badge--fair {
-  background: #fff6e0;
+  background: rgba(255, 246, 224, 0.92);
   color: #946821;
 }
 
 .grade-badge--pass {
-  background: #fff0e6;
+  background: rgba(255, 240, 230, 0.92);
   color: #b25a24;
 }
 
 .grade-badge--risk {
-  background: #fdeaea;
+  background: rgba(253, 234, 234, 0.92);
   color: #b23b3b;
 }
 
 .grade-badge--neutral {
-  background: var(--surface-muted);
+  background: rgba(246, 248, 253, 0.92);
   color: var(--color-muted);
 }
 
