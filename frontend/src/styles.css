@@ -984,12 +984,12 @@ textarea:focus {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin: 8px 0 28px;
-  padding: 20px 4px 0;
-  border-top: 1px solid var(--color-border);
+  margin: 18px 0 28px;
+  padding: 22px 4px 0;
+  border-top: 1px solid rgba(209, 216, 232, 0.72);
   color: var(--color-faint);
   font-size: 11px;
-  line-height: 1.5;
+  line-height: 1.6;
 }
 
 .dashboard-heading {
@@ -1877,15 +1877,16 @@ textarea:focus {
   left: 12px;
   top: -48px;
   z-index: 100;
-  padding: 10px 14px;
-  border-radius: var(--radius-sm);
-  background: var(--color-ink);
+  padding: 11px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.32);
+  border-radius: 12px;
+  background: var(--gradient-brand);
   color: #fff;
   font-size: 12px;
   font-weight: 700;
   text-decoration: none;
-  box-shadow: var(--shadow-md);
-  transition: top 150ms ease;
+  box-shadow: 0 16px 36px rgba(79, 109, 246, 0.32), var(--glass-inset);
+  transition: top 180ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .skip-link:focus {
@@ -1895,15 +1896,18 @@ textarea:focus {
 html {
   scroll-behavior: smooth;
   scroll-padding-top: 110px;
+  background: #f8f9fd;
 }
 
 @keyframes rise-in {
   from {
     opacity: 0;
-    transform: translateY(12px);
+    filter: blur(4px);
+    transform: translateY(14px);
   }
   to {
     opacity: 1;
+    filter: blur(0);
     transform: translateY(0);
   }
 }
