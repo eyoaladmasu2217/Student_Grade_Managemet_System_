@@ -529,10 +529,13 @@ h2 {
   justify-content: space-between;
   gap: 34px;
   overflow: hidden;
-  padding: 42px;
-  border-radius: var(--radius-xl);
-  background: linear-gradient(150deg, #111836 0%, #232f78 52%, #3a2f8f 100%);
-  box-shadow: var(--shadow-lg);
+  padding: 46px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 32px;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.12), transparent 42%),
+    linear-gradient(150deg, #101a38 0%, #223177 50%, #453493 100%);
+  box-shadow: 0 44px 100px rgba(31, 41, 90, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.22);
   color: #eef1ff;
   isolation: isolate;
 }
@@ -542,10 +545,10 @@ h2 {
   inset: -35%;
   z-index: -1;
   background:
-    radial-gradient(circle at 22% 20%, rgba(124, 92, 255, 0.55), transparent 42%),
-    radial-gradient(circle at 82% 12%, rgba(76, 110, 245, 0.5), transparent 40%),
-    radial-gradient(circle at 68% 88%, rgba(12, 166, 120, 0.28), transparent 42%);
-  filter: blur(6px);
+    radial-gradient(circle at 22% 20%, rgba(138, 108, 255, 0.48), transparent 42%),
+    radial-gradient(circle at 82% 12%, rgba(79, 155, 246, 0.46), transparent 40%),
+    radial-gradient(circle at 68% 88%, rgba(39, 194, 165, 0.24), transparent 42%);
+  filter: blur(10px);
 }
 
 .showcase-topline {
@@ -560,13 +563,16 @@ h2 {
 .showcase-term {
   display: inline-flex;
   align-items: center;
-  padding: 7px 12px;
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  padding: 8px 13px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.1);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16);
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.02em;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 
 .showcase-term {
@@ -576,21 +582,21 @@ h2 {
 }
 
 .showcase-copy h2 {
-  max-width: 420px;
-  margin-bottom: 14px;
+  max-width: 440px;
+  margin-bottom: 16px;
   color: #fff;
-  font-size: clamp(30px, 3.4vw, 42px);
+  font-size: clamp(32px, 3.6vw, 44px);
   font-weight: 800;
-  letter-spacing: -0.045em;
-  line-height: 1.08;
+  letter-spacing: -0.055em;
+  line-height: 1.06;
 }
 
 .showcase-copy p {
-  max-width: 420px;
+  max-width: 440px;
   margin-bottom: 0;
-  color: rgba(238, 241, 255, 0.72);
+  color: rgba(238, 241, 255, 0.76);
   font-size: 14px;
-  line-height: 1.7;
+  line-height: 1.72;
 }
 
 .showcase-list {
@@ -605,21 +611,30 @@ h2 {
   display: flex;
   align-items: flex-start;
   gap: 14px;
-  padding: 14px 16px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: var(--radius-md);
-  background: rgba(255, 255, 255, 0.06);
-  backdrop-filter: blur(8px);
+  padding: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.11), rgba(255, 255, 255, 0.05));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  transition: transform 200ms ease, background-color 200ms ease;
+}
+
+.showcase-list li:hover {
+  transform: translateX(3px);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.07));
 }
 
 .showcase-icon {
   display: grid;
-  width: 32px;
-  height: 32px;
+  width: 34px;
+  height: 34px;
   flex: 0 0 auto;
   place-items: center;
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 11px;
+  background: rgba(255, 255, 255, 0.14);
   color: #fff;
   font-size: 11px;
   font-weight: 700;
@@ -647,20 +662,24 @@ h2 {
 
 .login-card {
   width: 100%;
-  padding: 44px;
-  border: 1px solid rgba(228, 232, 244, 0.9);
-  border-radius: var(--radius-xl);
-  background: #fff;
-  box-shadow: var(--shadow-md);
+  padding: 46px;
+  border: 1px solid var(--glass-border);
+  border-radius: 30px;
+  background: linear-gradient(150deg, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.76));
+  box-shadow: 0 32px 80px rgba(24, 36, 66, 0.14), var(--glass-inset);
+  backdrop-filter: blur(28px) saturate(150%);
+  -webkit-backdrop-filter: blur(28px) saturate(150%);
 }
 
 .notice-card {
   width: min(100%, 440px);
   padding: 36px;
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-lg);
-  background: #fff;
+  background: var(--glass-surface-strong);
   box-shadow: var(--shadow-md);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
 }
 
 .loading-screen {
