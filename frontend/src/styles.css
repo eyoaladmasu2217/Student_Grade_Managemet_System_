@@ -1,32 +1,37 @@
 :root {
-  --color-ink: #0f1730;
-  --color-ink-soft: #2c3a5b;
-  --color-muted: #5d6b89;
-  --color-faint: #8a94ac;
-  --color-brand: #3b5bdb;
-  --color-brand-hover: #2f4bc0;
-  --color-violet: #7c5cff;
-  --color-accent: #0ca678;
+  --color-ink: #111827;
+  --color-ink-soft: #364152;
+  --color-muted: #667085;
+  --color-faint: #98a2b3;
+  --color-brand: #4257d8;
+  --color-brand-hover: #3448c5;
+  --color-violet: #7a5cf0;
+  --color-accent: #0e9f6e;
   --color-danger: #d64545;
-  --color-border: #e4e8f4;
-  --color-border-strong: #d3daea;
+  --color-border: rgba(209, 216, 232, 0.72);
+  --color-border-strong: rgba(173, 184, 208, 0.8);
   --surface: #ffffff;
-  --surface-muted: #f5f7fd;
+  --surface-muted: rgba(246, 248, 253, 0.72);
+  --glass-surface: rgba(255, 255, 255, 0.68);
+  --glass-surface-strong: rgba(255, 255, 255, 0.88);
+  --glass-border: rgba(255, 255, 255, 0.82);
+  --glass-inset: inset 0 1px 0 rgba(255, 255, 255, 0.92);
   --radius-xs: 8px;
   --radius-sm: 10px;
   --radius-md: 14px;
   --radius-lg: 20px;
   --radius-xl: 28px;
-  --shadow-xs: 0 1px 2px rgba(15, 23, 48, 0.05);
-  --shadow-sm: 0 6px 20px rgba(15, 23, 48, 0.06);
-  --shadow-md: 0 18px 46px rgba(15, 23, 48, 0.09);
-  --shadow-lg: 0 34px 80px rgba(15, 23, 48, 0.14);
-  --gradient-brand: linear-gradient(135deg, #4c6ef5 0%, #7c5cff 100%);
-  --gradient-brand-soft: linear-gradient(135deg, #eef2ff 0%, #f3efff 100%);
-  --focus-ring: 0 0 0 4px rgba(76, 110, 245, 0.18);
-  font-family: "Inter", "Segoe UI", Arial, sans-serif;
+  --shadow-xs: 0 1px 2px rgba(16, 24, 40, 0.04), var(--glass-inset);
+  --shadow-sm: 0 6px 24px rgba(16, 24, 40, 0.06), var(--glass-inset);
+  --shadow-md: 0 20px 50px rgba(16, 24, 40, 0.1), var(--glass-inset);
+  --shadow-lg: 0 36px 90px rgba(16, 24, 40, 0.16), var(--glass-inset);
+  --gradient-brand: linear-gradient(135deg, #4f6df6 0%, #7a5cf0 52%, #4f9bf6 100%);
+  --gradient-brand-soft: linear-gradient(135deg, #eef3ff 0%, #f5f0ff 100%);
+  --focus-ring: 0 0 0 4px rgba(79, 109, 246, 0.2);
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter",
+    "Segoe UI", Arial, sans-serif;
   color: var(--color-ink);
-  background: #f6f7fd;
+  background: #f8f9fd;
   color-scheme: light;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -46,20 +51,55 @@
 }
 
 body {
+  position: relative;
   min-width: 320px;
   min-height: 100vh;
   margin: 0;
+  overflow-x: hidden;
   background:
-    radial-gradient(52rem 52rem at 8% -12%, rgba(124, 92, 255, 0.16), transparent 62%),
-    radial-gradient(46rem 46rem at 104% -4%, rgba(76, 110, 245, 0.14), transparent 58%),
-    radial-gradient(40rem 40rem at 50% 110%, rgba(12, 166, 120, 0.07), transparent 60%),
-    linear-gradient(180deg, #f9faff 0%, #f4f6fd 100%);
+    radial-gradient(58rem 50rem at 2% -14%, rgba(99, 142, 255, 0.17), transparent 62%),
+    radial-gradient(48rem 46rem at 102% -6%, rgba(151, 104, 246, 0.15), transparent 60%),
+    radial-gradient(44rem 42rem at 82% 108%, rgba(40, 193, 162, 0.1), transparent 58%),
+    linear-gradient(180deg, #fcfdff 0%, #f5f7fc 48%, #f9fafe 100%);
   background-attachment: fixed;
+}
+
+body::before,
+body::after {
+  content: "";
+  position: fixed;
+  z-index: 0;
+  border-radius: 50%;
+  pointer-events: none;
+  filter: blur(90px);
+}
+
+body::before {
+  top: 12%;
+  left: -190px;
+  width: 460px;
+  height: 460px;
+  background: rgba(84, 133, 255, 0.14);
+}
+
+body::after {
+  right: -160px;
+  bottom: 2%;
+  width: 420px;
+  height: 420px;
+  background: rgba(127, 89, 240, 0.12);
 }
 
 button,
 a {
   font: inherit;
+}
+
+.app-shell,
+.login-layout,
+.loading-screen {
+  position: relative;
+  z-index: 1;
 }
 
 .app-shell {
