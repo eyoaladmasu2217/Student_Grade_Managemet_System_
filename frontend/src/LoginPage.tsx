@@ -93,17 +93,21 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
             Sign in with your academic account to continue.
           </p>
           <form className="form-stack" onSubmit={submit}>
-            <label>
-              College email
-              <input
-                type="email"
-                name="email"
-                autoComplete="username"
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                required
-              />
-            </label>
+              <label>
+                College email
+                <input
+                  type="email"
+                  name="email"
+                  autoComplete="username"
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  autoFocus
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  required
+                />
+              </label>
             <label>
               Password
               <input

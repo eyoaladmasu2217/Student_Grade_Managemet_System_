@@ -441,7 +441,15 @@ export default function InstructorDashboard() {
               {!gradebook?.grades_released ? (
                 <button
                   className="primary-button"
-                  onClick={workflow.releaseGrades}
+                  onClick={() => {
+                    if (
+                      window.confirm(
+                        "Release final grades for this section? Students will be able to view them immediately.",
+                      )
+                    ) {
+                      void workflow.releaseGrades();
+                    }
+                  }}
                   disabled={!releaseReadiness.canRelease || working}
                 >
                   {working ? "Working..." : "Release final grades"}
@@ -477,7 +485,12 @@ export default function InstructorDashboard() {
                 </span>
               </div>
             )}
-            <div className="table-scroll">
+            <div
+              className="table-scroll"
+              role="region"
+              aria-label="Assessment scores table"
+              tabIndex={0}
+            >
               <table className="data-table">
                 <thead>
                   <tr>
@@ -544,7 +557,12 @@ export default function InstructorDashboard() {
               <span className="term-pill">{corrections.length} corrections</span>
             </div>
             {corrections.length > 0 ? (
-              <div className="table-scroll">
+              <div
+                className="table-scroll"
+                role="region"
+                aria-label="Grade corrections history table"
+                tabIndex={0}
+              >
                 <table className="data-table compact-table">
                   <thead>
                     <tr>

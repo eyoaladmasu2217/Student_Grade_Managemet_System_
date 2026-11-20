@@ -74,6 +74,7 @@ export default function PasswordChangeForm({
             maxLength={128}
             required
           />
+          <span className="field-hint">Use at least 12 characters.</span>
         </label>
         <label>
           Confirm new password

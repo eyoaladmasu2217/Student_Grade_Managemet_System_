@@ -52,7 +52,12 @@ export default function StudentDashboard() {
     grades,
     search,
     selectedTerm === "all" ? null : Number(selectedTerm),
-  );
+  )
+    .slice()
+    .sort(
+      (a, b) =>
+        new Date(b.released_at).getTime() - new Date(a.released_at).getTime(),
+    );
   const stats = [
     { label: "Released grades", value: grades.length, hint: "Published results" },
     { label: "Average", value: `${average.toFixed(1)}%`, hint: "Across released courses" },
@@ -123,6 +128,10 @@ export default function StudentDashboard() {
               ))}
             </select>
           </label>
+          <p className="panel-note filter-status" role="status" aria-live="polite">
+            Showing {visibleGrades.length} of {grades.length} released{" "}
+            {grades.length === 1 ? "grade" : "grades"}
+          </p>
         </div>
       )}
 
