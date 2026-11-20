@@ -696,82 +696,85 @@ h2 {
 .login-card h1,
 .notice-card h1 {
   margin-bottom: 10px;
-  font-size: 34px;
-  letter-spacing: -0.04em;
+  font-size: 36px;
+  letter-spacing: -0.05em;
 }
 
 .login-description,
 .login-footnote,
 .notice-card p:not(.eyebrow) {
-  color: #69758b;
+  color: var(--color-muted);
   font-size: 13px;
-  line-height: 1.65;
+  line-height: 1.68;
 }
 
 .login-footnote {
-  margin: 20px 0 0;
+  margin: 22px 0 0;
   text-align: center;
 }
 
 .form-stack {
   display: grid;
-  gap: 16px;
-  margin-top: 24px;
+  gap: 18px;
+  margin-top: 26px;
 }
 
 .form-stack label,
 .form-grid label {
   display: grid;
-  gap: 7px;
+  gap: 8px;
   color: var(--color-ink-soft);
   font-size: 11.5px;
   font-weight: 600;
-  letter-spacing: 0.01em;
+  letter-spacing: 0.005em;
 }
 
 input,
 select,
 textarea {
   width: 100%;
-  min-height: 44px;
-  padding: 10px 13px;
-  border: 1px solid var(--color-border-strong);
-  border-radius: var(--radius-sm);
-  background: #fbfcff;
+  min-height: 46px;
+  padding: 11px 14px;
+  border: 1px solid rgba(199, 209, 228, 0.86);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.78);
+  box-shadow: inset 0 1px 2px rgba(16, 24, 40, 0.035), var(--glass-inset);
   color: var(--color-ink);
   font: inherit;
   font-size: 13px;
-  transition: border-color 150ms ease, box-shadow 150ms ease, background-color 150ms ease;
+  transition: border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease,
+    transform 160ms ease;
 }
 
 input:hover:not(:disabled),
 select:hover:not(:disabled),
 textarea:hover:not(:disabled) {
-  border-color: #b9c4dc;
-  background: #fff;
+  border-color: rgba(135, 153, 190, 0.9);
+  background: rgba(255, 255, 255, 0.94);
 }
 
 input:disabled,
 select:disabled,
 textarea:disabled {
-  background: var(--surface-muted);
+  background: rgba(240, 243, 250, 0.7);
   color: var(--color-faint);
   cursor: not-allowed;
+  box-shadow: none;
 }
 
 input::placeholder,
 textarea::placeholder {
-  color: #9aa4ba;
+  color: #a0aabd;
   opacity: 1;
 }
 
 input:focus,
 select:focus,
 textarea:focus {
-  border-color: var(--color-brand);
+  border-color: rgba(79, 109, 246, 0.72);
   outline: none;
   background: #fff;
-  box-shadow: var(--focus-ring);
+  box-shadow: var(--focus-ring), inset 0 1px 2px rgba(16, 24, 40, 0.03);
 }
 
 .primary-button:focus-visible,
@@ -784,32 +787,33 @@ textarea:focus {
 
 .primary-button,
 .secondary-button {
-  min-height: 42px;
-  padding: 10px 18px;
+  min-height: 44px;
+  padding: 10px 20px;
   border: 0;
-  border-radius: var(--radius-sm);
+  border-radius: 12px;
   cursor: pointer;
   font-size: 12.5px;
   font-weight: 700;
   letter-spacing: 0.005em;
-  transition: background-color 150ms ease, box-shadow 150ms ease, transform 150ms ease, border-color 150ms ease;
+  transition: background-color 160ms ease, box-shadow 160ms ease, transform 160ms ease,
+    border-color 160ms ease;
 }
 
 .primary-button {
   background: var(--gradient-brand);
-  box-shadow: 0 8px 20px rgba(76, 110, 245, 0.26);
+  box-shadow: 0 10px 24px rgba(79, 109, 246, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.34);
   color: #fff;
 }
 
 .primary-button:hover:not(:disabled) {
-  background: linear-gradient(135deg, #4263e6 0%, #6d4bf0 100%);
-  box-shadow: 0 12px 26px rgba(76, 110, 245, 0.34);
+  background: linear-gradient(135deg, #4263e6 0%, #6d4bf0 52%, #428fe6 100%);
+  box-shadow: 0 14px 30px rgba(79, 109, 246, 0.36), inset 0 1px 0 rgba(255, 255, 255, 0.4);
   transform: translateY(-1px);
 }
 
 .primary-button:disabled {
   cursor: wait;
-  opacity: 0.65;
+  opacity: 0.62;
 }
 
 .secondary-button:disabled {
@@ -823,20 +827,21 @@ textarea:focus {
 }
 
 .secondary-button {
-  border: 1px solid var(--color-border-strong);
-  background: #fff;
+  border: 1px solid rgba(205, 214, 231, 0.9);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(250, 251, 255, 0.82));
   box-shadow: var(--shadow-xs);
   color: var(--color-ink-soft);
 }
 
 .secondary-button:hover:not(:disabled) {
-  border-color: #b9c4dc;
-  background: var(--surface-muted);
+  border-color: rgba(154, 171, 204, 0.95);
+  background: #fff;
+  box-shadow: 0 8px 20px rgba(16, 24, 40, 0.07), var(--glass-inset);
 }
 
 .secondary-button--compact {
-  min-height: 34px;
-  padding: 6px 12px;
+  min-height: 36px;
+  padding: 6px 14px;
   border-radius: 999px;
   font-size: 11px;
 }
