@@ -5,6 +5,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field, field_validator
 
+from app.audit import log_security_event
 from app.auth import get_current_user
 from app.database import get_db
 from app.grade_math import calculate_grade_for_student
@@ -57,6 +58,7 @@ def correct_released_score(
     user: Annotated[sqlite3.Row, Depends(get_current_user)],
     connection: Annotated[sqlite3.Connection, Depends(get_db)],
 ) -> GradeCorrectionResponse:
+    connection.execute("BEGIN IMMEDIATE")
     assessment = connection.execute(
         """
         SELECT assessments.id, assessments.title, assessments.max_points,
@@ -77,7 +79,6 @@ def correct_released_score(
             detail=f"Score cannot exceed {assessment['max_points']} points",
         )
 
-    connection.execute("BEGIN IMMEDIATE")
     released_grade = connection.execute(
         """
         SELECT percentage, letter_grade
@@ -90,6 +91,19 @@ def correct_released_score(
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="This student's grade has not been released",
+        )
+
+    enrollment = connection.execute(
+        """
+        SELECT 1 FROM enrollments
+        WHERE section_id = ? AND student_id = ? AND status = 'active'
+        """,
+        (assessment["section_id"], student_id),
+    ).fetchone()
+    if enrollment is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Active student enrollment not found for this section",
         )
 
     prior_score = connection.execute(
@@ -169,6 +183,14 @@ def correct_released_score(
         ),
     )
     connection.commit()
+    log_security_event(
+        "grade_corrected",
+        "success",
+        user_id=user["id"],
+        section_id=assessment["section_id"],
+        student_id=student_id,
+        assessment_id=assessment_id,
+    )
 
     row = connection.execute(
         """

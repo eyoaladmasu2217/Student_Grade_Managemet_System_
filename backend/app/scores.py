@@ -69,6 +69,7 @@ def record_score(
     user: Annotated[sqlite3.Row, Depends(get_current_user)],
     connection: Annotated[sqlite3.Connection, Depends(get_db)],
 ) -> ScoreResponse:
+    connection.execute("BEGIN IMMEDIATE")
     assessment = connection.execute(
         """
         SELECT assessments.id, assessments.max_points, assessment_categories.id AS category_id,
@@ -89,7 +90,6 @@ def record_score(
             detail=f"Score cannot exceed {assessment['max_points']} points",
         )
 
-    connection.execute("BEGIN IMMEDIATE")
     if connection.execute(
         "SELECT 1 FROM section_releases WHERE section_id = ?",
         (assessment["section_id"],),

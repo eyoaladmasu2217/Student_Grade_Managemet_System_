@@ -81,4 +81,28 @@ describe("apiRequest", () => {
     const [, options] = fetchMock.mock.calls[0] as [string, RequestInit];
     expect(new Headers(options.headers).get("Content-Type")).toBe("application/json");
   });
+
+  it("adds a custom request header to state-changing calls only", async () => {
+    const jsonResponse = () =>
+      new Response(JSON.stringify({ status: "ok" }), {
+        headers: { "Content-Type": "application/json" },
+      });
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(jsonResponse())
+      .mockResolvedValueOnce(jsonResponse());
+    vi.stubGlobal("fetch", fetchMock);
+
+    await apiRequest("/api/health");
+    await apiRequest("/api/auth/logout", { method: "POST" });
+
+    const readHeaders = new Headers(
+      (fetchMock.mock.calls[0] as [string, RequestInit])[1].headers,
+    );
+    const writeHeaders = new Headers(
+      (fetchMock.mock.calls[1] as [string, RequestInit])[1].headers,
+    );
+    expect(readHeaders.has("X-Requested-With")).toBe(false);
+    expect(writeHeaders.get("X-Requested-With")).toBe("XMLHttpRequest");
+  });
 });

@@ -2,10 +2,12 @@ import sqlite3
 from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from pydantic import BaseModel, EmailStr, Field, field_validator
+from pydantic import BaseModel, EmailStr, Field, field_validator, model_validator
 
+from app.audit import log_security_event
 from app.auth import UserResponse, require_roles
 from app.database import get_db
+from app.password_policy import validate_password
 from app.security import hash_password
 
 router = APIRouter(prefix="/api/users", tags=["users"])
@@ -26,6 +28,11 @@ class UserCreate(BaseModel):
             raise ValueError("Name cannot be blank")
         return normalized
 
+    @model_validator(mode="after")
+    def check_password_strength(self) -> "UserCreate":
+        validate_password(self.password, str(self.email))
+        return self
+
 
 @router.get("", response_model=list[UserResponse])
 def list_users(
@@ -38,7 +45,7 @@ def list_users(
     if role:
         rows = connection.execute(
             """
-            SELECT id, email, full_name, role
+            SELECT id, email, full_name, role, is_active
             FROM users
             WHERE role = ?
             ORDER BY full_name, email
@@ -49,7 +56,7 @@ def list_users(
     else:
         rows = connection.execute(
             """
-            SELECT id, email, full_name, role
+            SELECT id, email, full_name, role, is_active
             FROM users
             ORDER BY full_name, email
             LIMIT ? OFFSET ?
@@ -62,7 +69,7 @@ def list_users(
 @router.post("", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 def create_user(
     payload: UserCreate,
-    _: Annotated[sqlite3.Row, Depends(require_roles("admin"))],
+    administrator: Annotated[sqlite3.Row, Depends(require_roles("admin"))],
     connection: Annotated[sqlite3.Connection, Depends(get_db)],
 ) -> UserResponse:
     try:
@@ -88,7 +95,59 @@ def create_user(
         raise
 
     row = connection.execute(
-        "SELECT id, email, full_name, role FROM users WHERE id = ?",
+        "SELECT id, email, full_name, role, is_active FROM users WHERE id = ?",
         (cursor.lastrowid,),
     ).fetchone()
+    log_security_event(
+        "user_created",
+        "success",
+        administrator_id=administrator["id"],
+        user_id=row["id"],
+        role=row["role"],
+    )
+    return UserResponse(**dict(row))
+
+
+class UserActiveInput(BaseModel):
+    is_active: bool
+
+
+@router.patch("/{user_id}/active", response_model=UserResponse)
+def set_user_active(
+    user_id: int,
+    payload: UserActiveInput,
+    administrator: Annotated[sqlite3.Row, Depends(require_roles("admin"))],
+    connection: Annotated[sqlite3.Connection, Depends(get_db)],
+) -> UserResponse:
+    connection.execute("BEGIN IMMEDIATE")
+    target = connection.execute(
+        "SELECT id, is_active FROM users WHERE id = ?", (user_id,)
+    ).fetchone()
+    if target is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    if not payload.is_active and target["id"] == administrator["id"]:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Administrators cannot deactivate their own account",
+        )
+
+    connection.execute(
+        "UPDATE users SET is_active = ? WHERE id = ?",
+        (int(payload.is_active), user_id),
+    )
+    if not payload.is_active:
+        connection.execute("DELETE FROM sessions WHERE user_id = ?", (user_id,))
+    connection.commit()
+
+    row = connection.execute(
+        "SELECT id, email, full_name, role, is_active FROM users WHERE id = ?",
+        (user_id,),
+    ).fetchone()
+    log_security_event(
+        "account_status_changed",
+        "success",
+        administrator_id=administrator["id"],
+        user_id=user_id,
+        is_active=payload.is_active,
+    )
     return UserResponse(**dict(row))

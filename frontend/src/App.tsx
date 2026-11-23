@@ -75,6 +75,21 @@ export default function App() {
     }
   }
 
+  async function signOutEverywhere() {
+    try {
+      await apiRequest<void>("/api/auth/logout-all", { method: "POST" });
+      setUser(null);
+      setSessionState("signed-out");
+      setError("");
+    } catch (requestError) {
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Unable to sign out all devices. Try again.",
+      );
+    }
+  }
+
   if (sessionState === "loading") {
     return (
       <main
@@ -163,6 +178,16 @@ export default function App() {
                 onClick={signOut}
               >
                 Sign out
+              </button>
+              <button
+                className="secondary-button secondary-button--compact"
+                onClick={() => {
+                  if (window.confirm("Sign out of all devices?")) {
+                    void signOutEverywhere();
+                  }
+                }}
+              >
+                Sign out everywhere
               </button>
             </div>
           </div>

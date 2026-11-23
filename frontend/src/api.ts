@@ -187,6 +187,10 @@ export async function apiRequest<T>(
   init: RequestInit = {},
 ): Promise<T> {
   const headers = new Headers(init.headers);
+  const method = (init.method ?? "GET").toUpperCase();
+  if (!["GET", "HEAD", "OPTIONS"].includes(method)) {
+    headers.set("X-Requested-With", "XMLHttpRequest");
+  }
   if (init.body != null && !headers.has("Content-Type")) {
     headers.set("Content-Type", "application/json");
   }

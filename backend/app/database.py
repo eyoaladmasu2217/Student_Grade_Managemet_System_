@@ -2,6 +2,7 @@ import os
 import sqlite3
 from collections.abc import Iterator
 from contextlib import closing
+from datetime import datetime, timezone
 from pathlib import Path
 
 DATABASE_PATH = Path(
@@ -28,6 +29,22 @@ def get_db() -> Iterator[sqlite3.Connection]:
         connection.close()
 
 
+def purge_expired_sessions() -> int:
+    now = datetime.now(timezone.utc)
+    with closing(connect()) as connection:
+        expired_ids = [
+            row["id"]
+            for row in connection.execute("SELECT id, expires_at FROM sessions")
+            if datetime.fromisoformat(row["expires_at"].replace("Z", "+00:00")) <= now
+        ]
+        if expired_ids:
+            connection.executemany(
+                "DELETE FROM sessions WHERE id = ?", [(session_id,) for session_id in expired_ids]
+            )
+            connection.commit()
+    return len(expired_ids)
+
+
 def initialize_database() -> None:
     with closing(connect()) as connection:
         connection.executescript(
@@ -47,6 +64,7 @@ def initialize_database() -> None:
                 user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
                 token_hash TEXT NOT NULL UNIQUE,
                 expires_at TEXT NOT NULL,
+                last_seen_at TEXT,
                 created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
             );
 
@@ -184,6 +202,12 @@ def initialize_database() -> None:
                 ON grade_corrections(section_id, changed_at DESC);
             """
         )
+        session_columns = {
+            row["name"] for row in connection.execute("PRAGMA table_info(sessions)")
+        }
+        if "last_seen_at" not in session_columns:
+            connection.execute("ALTER TABLE sessions ADD COLUMN last_seen_at TEXT")
+
         connection.executemany(
             """
             INSERT OR IGNORE INTO grade_bands (code, minimum_percentage)
