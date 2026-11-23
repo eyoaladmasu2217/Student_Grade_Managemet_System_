@@ -5,6 +5,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field, field_validator
 
+from app.audit import log_security_event
 from app.auth import get_current_user
 from app.database import get_db
 from app.grade_math import calculate_grade_for_student
@@ -182,6 +183,14 @@ def correct_released_score(
         ),
     )
     connection.commit()
+    log_security_event(
+        "grade_corrected",
+        "success",
+        user_id=user["id"],
+        section_id=assessment["section_id"],
+        student_id=student_id,
+        assessment_id=assessment_id,
+    )
 
     row = connection.execute(
         """

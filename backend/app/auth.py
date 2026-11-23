@@ -5,6 +5,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from pydantic import BaseModel, EmailStr, Field
 
+from app.audit import log_security_event
 from app.config import use_secure_cookies
 from app.database import get_db
 from app.login_guard import login_throttle
@@ -130,6 +131,7 @@ def login(
     address = client_address(request)
     retry_after = login_throttle.retry_after(email, address)
     if retry_after is not None:
+        log_security_event("login", "failure", email=email, address=address, reason="throttled")
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
             detail="Too many failed sign-in attempts. Try again later.",
@@ -144,12 +146,18 @@ def login(
     password_is_valid = verify_login_password(payload.password, stored_hash)
     if user is None or not user["is_active"] or not password_is_valid:
         login_throttle.record_failure(email, address)
+        log_security_event(
+            "login", "failure", email=email, address=address, reason="invalid_credentials"
+        )
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Email or password is incorrect",
         )
 
     login_throttle.clear(email, address)
+    log_security_event(
+        "login", "success", email=email, user_id=user["id"], address=address
+    )
     token = create_session_token()
     expires_at = datetime.now(timezone.utc) + SESSION_DURATION
     connection.execute(
@@ -193,6 +201,7 @@ def logout(
             (hash_session_token(token),),
         )
         connection.commit()
+    log_security_event("logout", "success")
     clear_session_cookie(response)
 
 
@@ -209,6 +218,7 @@ def logout_all_sessions(
 ) -> None:
     connection.execute("DELETE FROM sessions WHERE user_id = ?", (user["id"],))
     connection.commit()
+    log_security_event("logout_all", "success", user_id=user["id"])
     clear_session_cookie(response)
 
 
@@ -240,11 +250,13 @@ def change_password(
     if account is None or not verify_password(
         payload.current_password, account["password_hash"]
     ):
+        log_security_event("password_change", "failure", user_id=user["id"], reason="bad_current")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Current password is incorrect",
         )
     if verify_password(payload.new_password, account["password_hash"]):
+        log_security_event("password_change", "failure", user_id=user["id"], reason="reused")
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="New password must be different from the current password",
@@ -257,6 +269,7 @@ def change_password(
         (hash_password(payload.new_password), user["id"]),
     )
     connection.execute("DELETE FROM sessions WHERE user_id = ?", (user["id"],))
+    log_security_event("password_change", "success", user_id=user["id"])
     connection.execute(
         """
         INSERT INTO sessions (user_id, token_hash, expires_at, last_seen_at)
