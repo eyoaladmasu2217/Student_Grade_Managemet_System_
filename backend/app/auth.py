@@ -7,7 +7,12 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from pydantic import BaseModel, EmailStr, Field
 
 from app.database import get_db
-from app.security import create_session_token, hash_session_token, verify_password
+from app.security import (
+    create_session_token,
+    hash_password,
+    hash_session_token,
+    verify_password,
+)
 
 router = APIRouter(prefix="/api/auth", tags=["authentication"])
 SESSION_COOKIE = "sgms_session"
