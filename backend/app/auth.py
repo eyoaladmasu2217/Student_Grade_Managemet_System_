@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from pydantic import BaseModel, EmailStr, Field
 
 from app.database import get_db
+from app.login_guard import login_throttle
 from app.security import (
     create_session_token,
     hash_password,
@@ -98,24 +99,41 @@ def require_roles(*roles: str):
     return role_guard
 
 
+def client_address(request: Request) -> str:
+    return request.client.host if request.client else "unknown"
+
+
 @router.post("/login", response_model=UserResponse)
 def login(
     payload: LoginRequest,
+    request: Request,
     response: Response,
     connection: Annotated[sqlite3.Connection, Depends(get_db)],
 ) -> UserResponse:
+    email = str(payload.email)
+    address = client_address(request)
+    retry_after = login_throttle.retry_after(email, address)
+    if retry_after is not None:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Too many failed sign-in attempts. Try again later.",
+            headers={"Retry-After": str(retry_after)},
+        )
+
     user = connection.execute(
         "SELECT id, email, full_name, password_hash, role, is_active FROM users WHERE email = ?",
-        (str(payload.email),),
+        (email,),
     ).fetchone()
     if user is None or not user["is_active"] or not verify_password(
         payload.password, user["password_hash"]
     ):
+        login_throttle.record_failure(email, address)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Email or password is incorrect",
         )
 
+    login_throttle.clear(email, address)
     token = create_session_token()
     expires_at = datetime.now(timezone.utc) + SESSION_DURATION
     connection.execute(
