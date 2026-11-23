@@ -1,8 +1,11 @@
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from starlette.status import HTTP_422_UNPROCESSABLE_ENTITY
 
 from app.academic import router as academic_router
 from app.auth import router as auth_router
@@ -27,6 +30,23 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
     yield
 
 
+async def handle_validation_error(
+    request: Request, error: RequestValidationError
+) -> JSONResponse:
+    if request.url.path == "/api/auth/login":
+        return JSONResponse(
+            status_code=HTTP_422_UNPROCESSABLE_ENTITY,
+            content={"detail": "Email or password is not acceptable"},
+        )
+    details = [
+        {"type": item["type"], "loc": item["loc"], "msg": item["msg"]}
+        for item in error.errors()
+    ]
+    return JSONResponse(
+        status_code=HTTP_422_UNPROCESSABLE_ENTITY, content={"detail": details}
+    )
+
+
 def create_app() -> FastAPI:
     production = is_production()
     api = FastAPI(
@@ -38,6 +58,8 @@ def create_app() -> FastAPI:
         openapi_url=None if production else "/openapi.json",
         lifespan=lifespan,
     )
+
+    api.add_exception_handler(RequestValidationError, handle_validation_error)
 
     api.add_middleware(
         CORSMiddleware,
