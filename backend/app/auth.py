@@ -63,6 +63,7 @@ class UserResponse(BaseModel):
     email: str
     full_name: str
     role: str
+    is_active: bool = True
 
 
 def get_current_user(
@@ -170,6 +171,7 @@ def login(
         email=user["email"],
         full_name=user["full_name"],
         role=user["role"],
+        is_active=bool(user["is_active"]),
     )
 
 
@@ -219,6 +221,7 @@ def current_user(
         email=user["email"],
         full_name=user["full_name"],
         role=user["role"],
+        is_active=bool(user["is_active"]),
     )
 
 
@@ -273,4 +276,5 @@ def change_password(
         email=user["email"],
         full_name=user["full_name"],
         role=user["role"],
+        is_active=bool(user["is_active"]),
     )

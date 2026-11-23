@@ -38,7 +38,7 @@ def list_users(
     if role:
         rows = connection.execute(
             """
-            SELECT id, email, full_name, role
+            SELECT id, email, full_name, role, is_active
             FROM users
             WHERE role = ?
             ORDER BY full_name, email
@@ -49,7 +49,7 @@ def list_users(
     else:
         rows = connection.execute(
             """
-            SELECT id, email, full_name, role
+            SELECT id, email, full_name, role, is_active
             FROM users
             ORDER BY full_name, email
             LIMIT ? OFFSET ?
@@ -88,7 +88,45 @@ def create_user(
         raise
 
     row = connection.execute(
-        "SELECT id, email, full_name, role FROM users WHERE id = ?",
+        "SELECT id, email, full_name, role, is_active FROM users WHERE id = ?",
         (cursor.lastrowid,),
+    ).fetchone()
+    return UserResponse(**dict(row))
+
+
+class UserActiveInput(BaseModel):
+    is_active: bool
+
+
+@router.patch("/{user_id}/active", response_model=UserResponse)
+def set_user_active(
+    user_id: int,
+    payload: UserActiveInput,
+    administrator: Annotated[sqlite3.Row, Depends(require_roles("admin"))],
+    connection: Annotated[sqlite3.Connection, Depends(get_db)],
+) -> UserResponse:
+    connection.execute("BEGIN IMMEDIATE")
+    target = connection.execute(
+        "SELECT id, is_active FROM users WHERE id = ?", (user_id,)
+    ).fetchone()
+    if target is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    if not payload.is_active and target["id"] == administrator["id"]:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Administrators cannot deactivate their own account",
+        )
+
+    connection.execute(
+        "UPDATE users SET is_active = ? WHERE id = ?",
+        (int(payload.is_active), user_id),
+    )
+    if not payload.is_active:
+        connection.execute("DELETE FROM sessions WHERE user_id = ?", (user_id,))
+    connection.commit()
+
+    row = connection.execute(
+        "SELECT id, email, full_name, role, is_active FROM users WHERE id = ?",
+        (user_id,),
     ).fetchone()
     return UserResponse(**dict(row))
