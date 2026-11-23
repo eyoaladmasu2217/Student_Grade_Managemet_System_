@@ -11,6 +11,8 @@ from app.security import hash_password
 
 @pytest.fixture
 def client(tmp_path, monkeypatch):
+    monkeypatch.setenv("SGMS_COOKIE_SECURE", "false")
+    monkeypatch.setenv("SGMS_ALLOW_INSECURE_COOKIES", "true")
     monkeypatch.setattr(database, "DATABASE_PATH", tmp_path / "test.sqlite3")
     with TestClient(app) as test_client:
         yield test_client

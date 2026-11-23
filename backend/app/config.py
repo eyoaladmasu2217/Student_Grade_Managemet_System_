@@ -1,5 +1,7 @@
+import logging
 import os
 
+logger = logging.getLogger("sgms.security")
 DEFAULT_FRONTEND_ORIGINS = ("http://localhost:5173", "http://127.0.0.1:5173")
 
 
@@ -13,6 +15,17 @@ def environment() -> str:
 
 def is_production() -> bool:
     return environment() in {"production", "prod"}
+
+
+def use_secure_cookies() -> bool:
+    explicitly_secure = os.getenv("SGMS_COOKIE_SECURE", "true").strip().lower() == "true"
+    if explicitly_secure:
+        return True
+    if is_production():
+        logger.warning("SGMS_COOKIE_SECURE=false is ignored in production")
+        return True
+    allow_insecure = os.getenv("SGMS_ALLOW_INSECURE_COOKIES", "false").strip().lower() == "true"
+    return not allow_insecure
 
 
 def frontend_origins() -> list[str]:

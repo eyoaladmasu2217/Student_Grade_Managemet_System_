@@ -16,6 +16,8 @@ PASSWORD = "a-secure-password"
 @pytest.fixture
 def client(tmp_path, monkeypatch: pytest.MonkeyPatch):
     login_throttle.reset()
+    monkeypatch.setenv("SGMS_COOKIE_SECURE", "false")
+    monkeypatch.setenv("SGMS_ALLOW_INSECURE_COOKIES", "true")
     monkeypatch.setattr(database, "DATABASE_PATH", tmp_path / "test.sqlite3")
     with TestClient(app) as test_client:
         with closing(sqlite3.connect(tmp_path / "test.sqlite3")) as connection:

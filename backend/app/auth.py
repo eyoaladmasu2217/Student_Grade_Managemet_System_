@@ -1,4 +1,3 @@
-import os
 import sqlite3
 from datetime import datetime, timedelta, timezone
 from typing import Annotated
@@ -6,6 +5,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from pydantic import BaseModel, EmailStr, Field
 
+from app.config import use_secure_cookies
 from app.database import get_db
 from app.login_guard import login_throttle
 from app.security import (
@@ -26,7 +26,7 @@ def set_session_cookie(response: Response, token: str) -> None:
         key=SESSION_COOKIE,
         value=token,
         httponly=True,
-        secure=os.getenv("SGMS_COOKIE_SECURE", "false").lower() == "true",
+        secure=use_secure_cookies(),
         samesite="lax",
         max_age=int(SESSION_DURATION.total_seconds()),
         path="/",
@@ -38,7 +38,7 @@ def clear_session_cookie(response: Response) -> None:
         key=SESSION_COOKIE,
         path="/",
         httponly=True,
-        secure=os.getenv("SGMS_COOKIE_SECURE", "false").lower() == "true",
+        secure=use_secure_cookies(),
         samesite="lax",
     )
 
