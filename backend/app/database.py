@@ -2,6 +2,7 @@ import os
 import sqlite3
 from collections.abc import Iterator
 from contextlib import closing
+from datetime import datetime, timezone
 from pathlib import Path
 
 DATABASE_PATH = Path(
@@ -26,6 +27,22 @@ def get_db() -> Iterator[sqlite3.Connection]:
         yield connection
     finally:
         connection.close()
+
+
+def purge_expired_sessions() -> int:
+    now = datetime.now(timezone.utc)
+    with closing(connect()) as connection:
+        expired_ids = [
+            row["id"]
+            for row in connection.execute("SELECT id, expires_at FROM sessions")
+            if datetime.fromisoformat(row["expires_at"].replace("Z", "+00:00")) <= now
+        ]
+        if expired_ids:
+            connection.executemany(
+                "DELETE FROM sessions WHERE id = ?", [(session_id,) for session_id in expired_ids]
+            )
+            connection.commit()
+    return len(expired_ids)
 
 
 def initialize_database() -> None:

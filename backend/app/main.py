@@ -10,7 +10,7 @@ from app.config import frontend_origins, is_production
 from app.courses import course_router, section_router
 from app.corrections import router as corrections_router
 from app.csrf import validate_request_origin
-from app.database import initialize_database
+from app.database import initialize_database, purge_expired_sessions
 from app.enrollments import router as enrollments_router
 from app.gradebook import router as gradebook_router
 from app.grade_scale import router as grade_scale_router
@@ -23,6 +23,7 @@ from app.users import router as users_router
 @asynccontextmanager
 async def lifespan(_: FastAPI) -> AsyncIterator[None]:
     initialize_database()
+    purge_expired_sessions()
     yield
 
 
