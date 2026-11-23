@@ -19,6 +19,11 @@ from app.security import (
 router = APIRouter(prefix="/api/auth", tags=["authentication"])
 SESSION_COOKIE = "sgms_session"
 SESSION_DURATION = timedelta(hours=12)
+SESSION_IDLE_TIMEOUT = timedelta(hours=2)
+
+
+def parse_timestamp(value: str) -> datetime:
+    return datetime.fromisoformat(value.replace("Z", "+00:00"))
 
 
 def set_session_cookie(response: Response, token: str) -> None:
@@ -71,7 +76,7 @@ def get_current_user(
     row = connection.execute(
         """
         SELECT users.id, users.email, users.full_name, users.role, users.is_active,
-               sessions.id AS session_id, sessions.expires_at
+               sessions.id AS session_id, sessions.expires_at, sessions.last_seen_at
         FROM sessions
         JOIN users ON users.id = sessions.user_id
         WHERE sessions.token_hash = ?
@@ -81,11 +86,20 @@ def get_current_user(
     if row is None or not row["is_active"]:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Session is invalid")
 
-    expiry = datetime.fromisoformat(row["expires_at"].replace("Z", "+00:00"))
-    if expiry <= datetime.now(timezone.utc):
+    now = datetime.now(timezone.utc)
+    expiry = parse_timestamp(row["expires_at"])
+    last_seen = parse_timestamp(row["last_seen_at"]) if row["last_seen_at"] else now
+    expired = expiry <= now or now - last_seen > SESSION_IDLE_TIMEOUT
+    if expired:
         connection.execute("DELETE FROM sessions WHERE id = ?", (row["session_id"],))
         connection.commit()
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Session has expired")
+
+    connection.execute(
+        "UPDATE sessions SET last_seen_at = ? WHERE id = ?",
+        (now.isoformat(), row["session_id"]),
+    )
+    connection.commit()
     return row
 
 
@@ -138,8 +152,16 @@ def login(
     token = create_session_token()
     expires_at = datetime.now(timezone.utc) + SESSION_DURATION
     connection.execute(
-        "INSERT INTO sessions (user_id, token_hash, expires_at) VALUES (?, ?, ?)",
-        (user["id"], hash_session_token(token), expires_at.isoformat()),
+        """
+        INSERT INTO sessions (user_id, token_hash, expires_at, last_seen_at)
+        VALUES (?, ?, ?, ?)
+        """,
+        (
+            user["id"],
+            hash_session_token(token),
+            expires_at.isoformat(),
+            datetime.now(timezone.utc).isoformat(),
+        ),
     )
     connection.commit()
     set_session_cookie(response, token)
@@ -217,8 +239,16 @@ def change_password(
     )
     connection.execute("DELETE FROM sessions WHERE user_id = ?", (user["id"],))
     connection.execute(
-        "INSERT INTO sessions (user_id, token_hash, expires_at) VALUES (?, ?, ?)",
-        (user["id"], hash_session_token(token), expires_at.isoformat()),
+        """
+        INSERT INTO sessions (user_id, token_hash, expires_at, last_seen_at)
+        VALUES (?, ?, ?, ?)
+        """,
+        (
+            user["id"],
+            hash_session_token(token),
+            expires_at.isoformat(),
+            datetime.now(timezone.utc).isoformat(),
+        ),
     )
     connection.commit()
     set_session_cookie(response, token)
