@@ -3,12 +3,13 @@ from datetime import datetime, timedelta, timezone
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, field_validator
 
 from app.audit import log_security_event
 from app.config import use_secure_cookies
 from app.database import get_db
 from app.login_guard import login_throttle
+from app.password_policy import validate_password
 from app.security import (
     create_session_token,
     hash_password,
@@ -57,6 +58,11 @@ class LoginRequest(BaseModel):
 class ChangePasswordRequest(BaseModel):
     current_password: str = Field(min_length=1, max_length=256)
     new_password: str = Field(min_length=12, max_length=128)
+
+    @field_validator("new_password")
+    @classmethod
+    def check_password_strength(cls, value: str) -> str:
+        return validate_password(value)
 
 
 class UserResponse(BaseModel):
@@ -261,6 +267,13 @@ def change_password(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="New password must be different from the current password",
         )
+    try:
+        validate_password(payload.new_password, user["email"])
+    except ValueError as error:
+        log_security_event("password_change", "failure", user_id=user["id"], reason="weak")
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(error)
+        ) from error
 
     token = create_session_token()
     expires_at = datetime.now(timezone.utc) + SESSION_DURATION

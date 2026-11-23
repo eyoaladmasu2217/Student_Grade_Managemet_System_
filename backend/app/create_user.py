@@ -6,6 +6,7 @@ from contextlib import closing
 from pydantic import EmailStr, TypeAdapter, ValidationError
 
 from app.database import connect, initialize_database
+from app.password_policy import validate_password
 from app.security import hash_password
 
 
@@ -30,6 +31,10 @@ def main() -> None:
     password = getpass.getpass("Password (minimum 12 characters): ")
     if len(password) < 12:
         parser.error("Password must contain at least 12 characters")
+    try:
+        validate_password(password, email)
+    except ValueError as error:
+        parser.error(str(error))
 
     initialize_database()
     with closing(connect()) as connection:

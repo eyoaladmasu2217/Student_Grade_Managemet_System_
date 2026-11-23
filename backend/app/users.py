@@ -2,11 +2,12 @@ import sqlite3
 from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from pydantic import BaseModel, EmailStr, Field, field_validator
+from pydantic import BaseModel, EmailStr, Field, field_validator, model_validator
 
 from app.audit import log_security_event
 from app.auth import UserResponse, require_roles
 from app.database import get_db
+from app.password_policy import validate_password
 from app.security import hash_password
 
 router = APIRouter(prefix="/api/users", tags=["users"])
@@ -26,6 +27,11 @@ class UserCreate(BaseModel):
         if not normalized:
             raise ValueError("Name cannot be blank")
         return normalized
+
+    @model_validator(mode="after")
+    def check_password_strength(self) -> "UserCreate":
+        validate_password(self.password, str(self.email))
+        return self
 
 
 @router.get("", response_model=list[UserResponse])
