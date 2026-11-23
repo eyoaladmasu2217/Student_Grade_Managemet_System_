@@ -12,6 +12,7 @@ from app.security import (
     create_session_token,
     hash_password,
     hash_session_token,
+    verify_login_password,
     verify_password,
 )
 
@@ -124,9 +125,9 @@ def login(
         "SELECT id, email, full_name, password_hash, role, is_active FROM users WHERE email = ?",
         (email,),
     ).fetchone()
-    if user is None or not user["is_active"] or not verify_password(
-        payload.password, user["password_hash"]
-    ):
+    stored_hash = user["password_hash"] if user is not None and user["is_active"] else None
+    password_is_valid = verify_login_password(payload.password, stored_hash)
+    if user is None or not user["is_active"] or not password_is_valid:
         login_throttle.record_failure(email, address)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

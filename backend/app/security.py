@@ -37,6 +37,22 @@ def verify_password(password: str, password_hash: str) -> bool:
     return hmac.compare_digest(actual_key, expected_key)
 
 
+_dummy_password_hash: str | None = None
+
+
+def dummy_password_hash() -> str:
+    global _dummy_password_hash
+    if _dummy_password_hash is None:
+        _dummy_password_hash = hash_password(secrets.token_urlsafe(32))
+    return _dummy_password_hash
+
+
+def verify_login_password(password: str, password_hash: str | None) -> bool:
+    return verify_password(
+        password, password_hash if password_hash is not None else dummy_password_hash()
+    )
+
+
 def create_session_token() -> str:
     return secrets.token_urlsafe(32)
 
