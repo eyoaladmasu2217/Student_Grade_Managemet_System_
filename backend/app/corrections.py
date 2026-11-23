@@ -92,6 +92,19 @@ def correct_released_score(
             detail="This student's grade has not been released",
         )
 
+    enrollment = connection.execute(
+        """
+        SELECT 1 FROM enrollments
+        WHERE section_id = ? AND student_id = ? AND status = 'active'
+        """,
+        (assessment["section_id"], student_id),
+    ).fetchone()
+    if enrollment is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Active student enrollment not found for this section",
+        )
+
     prior_score = connection.execute(
         """
         SELECT points
