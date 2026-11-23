@@ -57,6 +57,7 @@ def correct_released_score(
     user: Annotated[sqlite3.Row, Depends(get_current_user)],
     connection: Annotated[sqlite3.Connection, Depends(get_db)],
 ) -> GradeCorrectionResponse:
+    connection.execute("BEGIN IMMEDIATE")
     assessment = connection.execute(
         """
         SELECT assessments.id, assessments.title, assessments.max_points,
@@ -77,7 +78,6 @@ def correct_released_score(
             detail=f"Score cannot exceed {assessment['max_points']} points",
         )
 
-    connection.execute("BEGIN IMMEDIATE")
     released_grade = connection.execute(
         """
         SELECT percentage, letter_grade
