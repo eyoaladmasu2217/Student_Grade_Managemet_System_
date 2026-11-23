@@ -38,7 +38,7 @@ For deployments where the browser calls the API from a different origin, set `SG
 
 - Set `SGMS_ENV=production`. This hides `/docs`, `/redoc`, and `/openapi.json`, and prevents `SGMS_COOKIE_SECURE=false` from taking effect.
 - Terminate HTTPS and set `SGMS_COOKIE_SECURE=true`. `SGMS_ALLOW_INSECURE_COOKIES` is intended only for local development over plain HTTP.
-- Keep `SGMS_FRONTEND_ORIGINS` as an exact allowlist. The API additionally rejects cross-site state-changing requests that carry an untrusted `Origin` or `Sec-Fetch-Site` header.
+- Keep `SGMS_FRONTEND_ORIGINS` as an exact allowlist. The API additionally rejects cross-site state-changing requests that carry an untrusted `Origin` or `Sec-Fetch-Site` header, and browser writes must include `X-Requested-With: XMLHttpRequest` (the frontend does this automatically).
 - Failed sign-ins are throttled per account and per client address; security events are written to the `sgms.security` logger, so configure your log collector to retain them.
 - Sessions expire after 12 hours or two hours of inactivity. Use `POST /api/auth/logout-all` to revoke every session for the current account, and `PATCH /api/users/{id}/active` to disable an account during incident response.
 - Always create accounts with passwords of at least 12 characters that are not common, sequential, or derived from the account email.

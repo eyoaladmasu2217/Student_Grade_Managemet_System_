@@ -33,6 +33,11 @@ async def validate_request_origin(
     if origin is not None and origin.rstrip("/") not in frontend_origins():
         return _rejected("Request origin is not allowed")
 
+    if (origin is not None or fetch_site is not None) and request.headers.get(
+        "x-requested-with"
+    ) != "XMLHttpRequest":
+        return _rejected("Browser state changes require a custom request header")
+
     if fetch_site in REJECTED_FETCH_SITES:
         return _rejected("Cross-site state changes are not allowed")
 

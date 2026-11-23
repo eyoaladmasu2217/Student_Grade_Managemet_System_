@@ -66,7 +66,7 @@ def create_app() -> FastAPI:
         allow_origins=frontend_origins(),
         allow_credentials=True,
         allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
-        allow_headers=["Authorization", "Content-Type"],
+        allow_headers=["Authorization", "Content-Type", "X-Requested-With"],
     )
     api.middleware("http")(add_security_headers)
     api.middleware("http")(validate_request_origin)

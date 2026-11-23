@@ -28,7 +28,13 @@ def test_non_browser_requests_are_allowed(client: TestClient) -> None:
 
 
 def test_allowlisted_origin_is_allowed(client: TestClient) -> None:
-    response = client.post("/action", headers={"origin": "https://grades.example.edu"})
+    response = client.post(
+        "/action",
+        headers={
+            "origin": "https://grades.example.edu",
+            "x-requested-with": "XMLHttpRequest",
+        },
+    )
 
     assert response.status_code == 200
 
@@ -40,12 +46,20 @@ def test_unknown_origin_is_rejected(client: TestClient) -> None:
     assert response.json()["detail"] == "Request origin is not allowed"
 
 
+def test_browser_requests_need_the_custom_header(client: TestClient) -> None:
+    response = client.post("/action", headers={"origin": "https://grades.example.edu"})
+
+    assert response.status_code == 403
+    assert response.json()["detail"] == "Browser state changes require a custom request header"
+
+
 def test_cross_site_fetch_is_rejected_even_with_valid_origin(client: TestClient) -> None:
     response = client.post(
         "/action",
         headers={
             "origin": "https://grades.example.edu",
             "sec-fetch-site": "cross-site",
+            "x-requested-with": "XMLHttpRequest",
         },
     )
 
@@ -58,6 +72,7 @@ def test_same_origin_fetch_is_allowed(client: TestClient) -> None:
         headers={
             "origin": "https://grades.example.edu",
             "sec-fetch-site": "same-origin",
+            "x-requested-with": "XMLHttpRequest",
         },
     )
 
