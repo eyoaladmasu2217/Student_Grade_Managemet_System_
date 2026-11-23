@@ -1,4 +1,5 @@
 import base64
+import binascii
 import hashlib
 import hmac
 import secrets
@@ -20,12 +21,20 @@ def hash_password(password: str) -> str:
 
 
 def verify_password(password: str, password_hash: str) -> bool:
-    algorithm, cost_text, salt_text, expected_key_text = password_hash.split("$", 3)
-    if algorithm != "scrypt" or cost_text != "16384":
+    try:
+        algorithm, cost_text, salt_text, expected_key_text = password_hash.split("$", 3)
+        if algorithm != "scrypt" or cost_text != "16384":
+            return False
+        salt = base64.b64decode(salt_text.encode("ascii"), altchars=b"-_", validate=True)
+        expected_key = base64.b64decode(
+            expected_key_text.encode("ascii"), altchars=b"-_", validate=True
+        )
+    except (ValueError, UnicodeEncodeError, binascii.Error):
         return False
 
-    salt = base64.urlsafe_b64decode(salt_text.encode("ascii"))
-    expected_key = base64.urlsafe_b64decode(expected_key_text.encode("ascii"))
+    if not 16 <= len(salt) <= 64 or len(expected_key) != 64:
+        return False
+
     actual_key = hashlib.scrypt(
         password.encode("utf-8"),
         salt=salt,
