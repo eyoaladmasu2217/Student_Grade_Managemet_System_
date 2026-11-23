@@ -1,12 +1,12 @@
-import os
-from contextlib import asynccontextmanager
 from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.academic import router as academic_router
 from app.auth import router as auth_router
+from app.config import frontend_origins
 from app.courses import course_router, section_router
 from app.corrections import router as corrections_router
 from app.database import initialize_database
@@ -17,15 +17,6 @@ from app.releases import router as releases_router
 from app.scores import router as scores_router
 from app.security_headers import add_security_headers
 from app.users import router as users_router
-
-frontend_origins = [
-    origin.strip()
-    for origin in os.getenv(
-        "SGMS_FRONTEND_ORIGINS",
-        "http://localhost:5173,http://127.0.0.1:5173",
-    ).split(",")
-    if origin.strip()
-]
 
 
 @asynccontextmanager
@@ -43,7 +34,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=frontend_origins,
+    allow_origins=frontend_origins(),
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
     allow_headers=["Authorization", "Content-Type"],
