@@ -194,6 +194,22 @@ def logout(
     clear_session_cookie(response)
 
 
+@router.post(
+    "/logout-all",
+    status_code=status.HTTP_204_NO_CONTENT,
+    response_class=Response,
+    response_model=None,
+)
+def logout_all_sessions(
+    response: Response,
+    user: Annotated[sqlite3.Row, Depends(get_current_user)],
+    connection: Annotated[sqlite3.Connection, Depends(get_db)],
+) -> None:
+    connection.execute("DELETE FROM sessions WHERE user_id = ?", (user["id"],))
+    connection.commit()
+    clear_session_cookie(response)
+
+
 @router.get("/me", response_model=UserResponse)
 def current_user(
     user: Annotated[sqlite3.Row, Depends(get_current_user)],
