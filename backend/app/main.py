@@ -15,6 +15,7 @@ from app.gradebook import router as gradebook_router
 from app.grade_scale import router as grade_scale_router
 from app.releases import router as releases_router
 from app.scores import router as scores_router
+from app.security_headers import add_security_headers
 from app.users import router as users_router
 
 frontend_origins = [
@@ -47,6 +48,8 @@ app.add_middleware(
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
     allow_headers=["Authorization", "Content-Type"],
 )
+
+app.middleware("http")(add_security_headers)
 
 app.include_router(auth_router)
 app.include_router(academic_router)
