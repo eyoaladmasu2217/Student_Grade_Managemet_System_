@@ -9,6 +9,7 @@ from app.auth import router as auth_router
 from app.config import frontend_origins, is_production
 from app.courses import course_router, section_router
 from app.corrections import router as corrections_router
+from app.csrf import validate_request_origin
 from app.database import initialize_database
 from app.enrollments import router as enrollments_router
 from app.gradebook import router as gradebook_router
@@ -45,6 +46,7 @@ def create_app() -> FastAPI:
         allow_headers=["Authorization", "Content-Type"],
     )
     api.middleware("http")(add_security_headers)
+    api.middleware("http")(validate_request_origin)
 
     api.include_router(auth_router)
     api.include_router(academic_router)
