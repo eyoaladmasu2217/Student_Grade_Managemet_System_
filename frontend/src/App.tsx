@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { ApiError, apiRequest, User } from "./api";
-import AdminDashboard from "./AdminDashboard";
-import InstructorDashboard from "./InstructorDashboard";
 import LoginPage from "./LoginPage";
 import PasswordChangeForm from "./PasswordChangeForm";
-import StudentDashboard from "./StudentDashboard";
+
+const AdminDashboard = lazy(() => import("./AdminDashboard"));
+const InstructorDashboard = lazy(() => import("./InstructorDashboard"));
+const StudentDashboard = lazy(() => import("./StudentDashboard"));
 
 type SessionState = "loading" | "signed-out" | "signed-in" | "unavailable";
 
@@ -204,9 +205,17 @@ export default function App() {
             }}
           />
         )}
-        {user.role === "admin" && <AdminDashboard />}
-        {user.role === "instructor" && <InstructorDashboard />}
-        {user.role === "student" && <StudentDashboard />}
+        <Suspense
+          fallback={
+            <div className="dashboard-layout" aria-busy="true" aria-live="polite">
+              <p className="visually-hidden" role="status">Loading your workspace...</p>
+            </div>
+          }
+        >
+          {user.role === "admin" && <AdminDashboard />}
+          {user.role === "instructor" && <InstructorDashboard />}
+          {user.role === "student" && <StudentDashboard />}
+        </Suspense>
         <footer className="app-footer">
           <span>BITS College · Student Grade Management System</span>
           <span>For account help, contact your academic administrator.</span>
