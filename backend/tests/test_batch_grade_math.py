@@ -4,6 +4,7 @@ import pytest
 
 from app import database
 from app.grade_math import calculate_grade_for_student, calculate_grades_for_students
+from app.releases import release_section_grades
 from app.scores import get_gradebook
 
 
@@ -106,3 +107,26 @@ def test_gradebook_uses_a_fixed_number_of_queries(db_path) -> None:
     assert len(gradebook.students) == 3
     assert gradebook.students[0].scores == {1: 90, 2: 80, 3: 20}
     assert len(queries) <= 8
+
+
+def test_release_uses_a_fixed_number_of_queries(db_path) -> None:
+    with closing(database.connect()) as connection:
+        connection.executemany(
+            """
+            INSERT INTO assessment_scores (assessment_id, student_id, points, updated_by)
+            VALUES (?, ?, ?, 1)
+            ON CONFLICT (assessment_id, student_id) DO UPDATE SET points = excluded.points
+            """,
+            [
+                (assessment, student, 15 if assessment > 2 else 75)
+                for assessment in (1, 2, 3, 4)
+                for student in (2, 3, 4)
+            ],
+        )
+        connection.commit()
+        queries: list[str] = []
+        connection.set_trace_callback(queries.append)
+        result = release_section_grades(1, {"id": 1, "role": "instructor"}, connection)
+
+    assert result.student_count == 3
+    assert len(queries) <= 12

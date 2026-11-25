@@ -7,8 +7,8 @@ from pydantic import BaseModel
 
 from app.auth import get_current_user, require_roles
 from app.database import get_db
-from app.grade_math import calculate_grade_for_student
-from app.grade_scale import letter_grade_for
+from app.grade_math import calculate_grades_for_students
+from app.grade_scale import letter_grade_from, load_grade_bands
 from app.gradebook import require_section_manager
 
 router = APIRouter(tags=["grade release"])
@@ -70,20 +70,23 @@ def release_section_grades(
             detail="A section must have active students before grades can be released",
         )
 
+    student_ids = [student["id"] for student in students]
+    summaries = calculate_grades_for_students(connection, section_id, student_ids)
+    bands = load_grade_bands(connection)
     grades: list[tuple[int, float, str]] = []
     incomplete_student_ids: list[int] = []
-    for student in students:
-        summary = calculate_grade_for_student(connection, section_id, student["id"])
+    for student_id in student_ids:
+        summary = summaries[student_id]
         if not summary.is_complete or summary.final_percentage is None:
-            incomplete_student_ids.append(student["id"])
+            incomplete_student_ids.append(student_id)
             continue
-        letter_grade = letter_grade_for(connection, summary.final_percentage)
+        letter_grade = letter_grade_from(bands, summary.final_percentage)
         if letter_grade is None:
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                 detail="Grade scale does not cover every final percentage",
             )
-        grades.append((student["id"], summary.final_percentage, letter_grade))
+        grades.append((student_id, summary.final_percentage, letter_grade))
 
     if incomplete_student_ids:
         raise HTTPException(
