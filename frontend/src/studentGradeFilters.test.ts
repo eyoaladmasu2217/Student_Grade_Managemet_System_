@@ -43,6 +43,12 @@ describe("filterReleasedGrades", () => {
     expect(filterReleasedGrades(grades, "", null)).toEqual(grades);
   });
 
+  it("keeps the original grade objects when no filter is applied", () => {
+    const result = filterReleasedGrades(grades, "", null);
+    expect(result).toHaveLength(grades.length);
+    result.forEach((grade, index) => expect(grade).toBe(grades[index]));
+  });
+
   it("searches course details and term names without case sensitivity", () => {
     expect(filterReleasedGrades(grades, "cAlCuLuS", null)).toEqual([grades[1]]);
     expect(filterReleasedGrades(grades, "fall 2026", null)).toEqual([
