@@ -50,6 +50,32 @@ def test_purge_removes_only_expired_sessions(db_path) -> None:
     assert len(session_hashes(db_path)) == 1
 
 
+def test_purge_uses_the_expiry_index(db_path) -> None:
+    with closing(sqlite3.connect(db_path)) as connection:
+        plan = " ".join(
+            " ".join(str(value) for value in row)
+            for row in connection.execute(
+                "EXPLAIN QUERY PLAN DELETE FROM sessions WHERE expires_at <= ?",
+                (datetime.now(timezone.utc).isoformat(),),
+            )
+        )
+    assert "sessions_expires_at_idx" in plan
+
+
+def test_purge_removes_legacy_zulu_timestamps(db_path) -> None:
+    expired = datetime.now(timezone.utc) - timedelta(hours=1)
+    add_session(db_path, 1, expired)
+    with closing(sqlite3.connect(db_path)) as connection:
+        connection.execute(
+            "UPDATE sessions SET expires_at = ?",
+            (expired.strftime("%Y-%m-%dT%H:%M:%fZ"),),
+        )
+        connection.commit()
+
+    assert database.purge_expired_sessions() == 1
+    assert session_hashes(db_path) == []
+
+
 def test_startup_purges_expired_sessions(db_path) -> None:
     add_session(db_path, 1, datetime.now(timezone.utc) - timedelta(days=1))
     add_session(db_path, 1, datetime.now(timezone.utc) + timedelta(hours=1))

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { apiRequest, ReleasedGrade } from "./api";
 import { clampPercentage, gradeTone } from "./gradeDisplay";
 import { filterReleasedGrades } from "./studentGradeFilters";
@@ -36,38 +36,47 @@ export default function StudentDashboard() {
     };
   }, [reloadKey]);
 
-  const average =
-    grades.length > 0
-      ? grades.reduce((sum, grade) => sum + grade.percentage, 0) / grades.length
-      : 0;
-  const best = grades.reduce<ReleasedGrade | null>(
-    (top, grade) => (!top || grade.percentage > top.percentage ? grade : top),
-    null,
+  const sortedGrades = useMemo(
+    () =>
+      [...grades].sort(
+        (a, b) => Date.parse(b.released_at) - Date.parse(a.released_at),
+      ),
+    [grades],
   );
-  const termCount = new Set(grades.map((grade) => grade.term_id)).size;
-  const terms = Array.from(
-    new Map(grades.map((grade) => [grade.term_id, grade.term_name])).entries(),
-  );
-  const visibleGrades = filterReleasedGrades(
-    grades,
-    search,
-    selectedTerm === "all" ? null : Number(selectedTerm),
-  )
-    .slice()
-    .sort(
-      (a, b) =>
-        new Date(b.released_at).getTime() - new Date(a.released_at).getTime(),
+  const stats = useMemo(() => {
+    const average =
+      grades.length > 0
+        ? grades.reduce((sum, grade) => sum + grade.percentage, 0) / grades.length
+        : 0;
+    const best = grades.reduce<ReleasedGrade | null>(
+      (top, grade) => (!top || grade.percentage > top.percentage ? grade : top),
+      null,
     );
-  const stats = [
-    { label: "Released grades", value: grades.length, hint: "Published results" },
-    { label: "Average", value: `${average.toFixed(1)}%`, hint: "Across released courses" },
-    {
-      label: "Strongest result",
-      value: best ? `${best.percentage}%` : "—",
-      hint: best ? `${best.course_code} · ${best.letter_grade}` : "No results yet",
-    },
-    { label: "Terms", value: termCount, hint: "With released grades" },
-  ];
+    const termCount = new Set(grades.map((grade) => grade.term_id)).size;
+    return [
+      { label: "Released grades", value: grades.length, hint: "Published results" },
+      { label: "Average", value: `${average.toFixed(1)}%`, hint: "Across released courses" },
+      {
+        label: "Strongest result",
+        value: best ? `${best.percentage}%` : "—",
+        hint: best ? `${best.course_code} · ${best.letter_grade}` : "No results yet",
+      },
+      { label: "Terms", value: termCount, hint: "With released grades" },
+    ];
+  }, [grades]);
+  const terms = useMemo(
+    () => Array.from(new Map(grades.map((grade) => [grade.term_id, grade.term_name])).entries()),
+    [grades],
+  );
+  const visibleGrades = useMemo(
+    () =>
+      filterReleasedGrades(
+        sortedGrades,
+        search,
+        selectedTerm === "all" ? null : Number(selectedTerm),
+      ),
+    [sortedGrades, search, selectedTerm],
+  );
 
   return (
     <section

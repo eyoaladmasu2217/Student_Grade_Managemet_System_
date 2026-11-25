@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useState, useSyncExternalStore } from "react";
+import { FormEvent, memo, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { apiRequest, Assessment, Category, Section } from "./api";
 import {
   createInstructorGradebookWorkflow,
@@ -23,7 +23,7 @@ interface WeightEditorProps {
   onSave: (categoryId: number, weight: number) => Promise<boolean>;
 }
 
-function WeightEditor({ category, disabled, error, onSave }: WeightEditorProps) {
+const WeightEditor = memo(function WeightEditor({ category, disabled, error, onSave }: WeightEditorProps) {
   const [weight, setWeight] = useState(String(category.weight));
 
   useEffect(() => {
@@ -57,9 +57,9 @@ function WeightEditor({ category, disabled, error, onSave }: WeightEditorProps) 
       {error && <span className="cell-error" role="alert">{error}</span>}
     </form>
   );
-}
+});
 
-function ScoreCell({
+const ScoreCell = memo(function ScoreCell({
   assessment,
   studentId,
   score,
@@ -125,7 +125,7 @@ function ScoreCell({
       {error && <span className="cell-error" role="alert">{error}</span>}
     </form>
   );
-}
+});
 
 export default function InstructorDashboard() {
   const [workflow] = useState(() => createInstructorGradebookWorkflow());
@@ -213,26 +213,39 @@ export default function InstructorDashboard() {
   }
 
   const section = sections.find((item) => String(item.id) === sectionId);
-  const releaseReadiness = getGradeReleaseReadiness(gradebook);
-  const totalWeight = categories.reduce((sum, category) => sum + category.weight, 0);
-  const metrics = [
-    { label: "Enrolled students", value: roster.length, hint: "Active roster" },
-    {
-      label: "Categories",
-      value: categories.length,
-      hint: `${totalWeight.toFixed(1)}% weighted`,
-    },
-    {
-      label: "Assessments",
-      value: gradebook?.assessments.length ?? 0,
-      hint: "Graded items",
-    },
-    {
-      label: "Release status",
-      value: releaseReadiness.canRelease ? "Ready" : "Draft",
-      hint: releaseReadiness.canRelease ? "All checks passed" : "Needs attention",
-    },
-  ];
+  const releaseReadiness = useMemo(
+    () => getGradeReleaseReadiness(gradebook),
+    [gradebook],
+  );
+  const totalWeight = useMemo(
+    () => categories.reduce((sum, category) => sum + category.weight, 0),
+    [categories],
+  );
+  const correctionTimes = useMemo(
+    () => new Map(corrections.map((entry) => [entry.id, new Date(entry.changed_at).toLocaleString()])),
+    [corrections],
+  );
+  const metrics = useMemo(
+    () => [
+      { label: "Enrolled students", value: roster.length, hint: "Active roster" },
+      {
+        label: "Categories",
+        value: categories.length,
+        hint: `${totalWeight.toFixed(1)}% weighted`,
+      },
+      {
+        label: "Assessments",
+        value: gradebook?.assessments.length ?? 0,
+        hint: "Graded items",
+      },
+      {
+        label: "Release status",
+        value: releaseReadiness.canRelease ? "Ready" : "Draft",
+        hint: releaseReadiness.canRelease ? "All checks passed" : "Needs attention",
+      },
+    ],
+    [roster.length, categories.length, totalWeight, gradebook, releaseReadiness],
+  );
 
   return (
     <section
@@ -588,7 +601,7 @@ export default function InstructorDashboard() {
                         </td>
                         <td>{correction.changed_by_name}</td>
                         <td>{correction.reason}</td>
-                        <td>{new Date(correction.changed_at).toLocaleString()}</td>
+                        <td>{correctionTimes.get(correction.id) ?? ""}</td>
                       </tr>
                     ))}
                   </tbody>

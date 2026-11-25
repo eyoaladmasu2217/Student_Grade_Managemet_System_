@@ -8,7 +8,12 @@ export function filterReleasedGrades(
   const query = search.trim().toLocaleLowerCase();
 
   return grades.filter((grade) => {
-    const matchesTerm = termId === null || grade.term_id === termId;
+    if (termId !== null && grade.term_id !== termId) {
+      return false;
+    }
+    if (!query) {
+      return true;
+    }
     const searchableText = [
       grade.course_code,
       grade.course_title,
@@ -18,6 +23,6 @@ export function filterReleasedGrades(
       .join(" ")
       .toLocaleLowerCase();
 
-    return matchesTerm && (!query || searchableText.includes(query));
+    return searchableText.includes(query);
   });
 }

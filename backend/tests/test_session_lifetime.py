@@ -65,6 +65,18 @@ def test_activity_refreshes_the_idle_window(client: TestClient, tmp_path) -> Non
     assert datetime.fromisoformat(current.replace("Z", "+00:00")) > old
 
 
+def test_recent_activity_does_not_write_on_every_request(client: TestClient, tmp_path) -> None:
+    with closing(sqlite3.connect(tmp_path / DB_NAME)) as connection:
+        initial = connection.execute("SELECT last_seen_at FROM sessions").fetchone()[0]
+
+    for _ in range(5):
+        assert client.get("/api/auth/me").status_code == 200
+
+    with closing(sqlite3.connect(tmp_path / DB_NAME)) as connection:
+        current = connection.execute("SELECT last_seen_at FROM sessions").fetchone()[0]
+    assert current == initial
+
+
 def test_absolute_expiry_is_still_enforced(client: TestClient, tmp_path) -> None:
     set_session_time(
         tmp_path / DB_NAME,

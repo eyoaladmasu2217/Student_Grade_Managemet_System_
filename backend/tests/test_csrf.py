@@ -23,6 +23,35 @@ def client(monkeypatch: pytest.MonkeyPatch):
         yield test_client
 
 
+def test_app_state_origins_avoid_reparsing_the_environment(monkeypatch: pytest.MonkeyPatch) -> None:
+    reads: list[int] = []
+
+    def count_read() -> list[str]:
+        reads.append(1)
+        return ["https://unexpected.example"]
+
+    monkeypatch.setattr("app.csrf.frontend_origins", count_read)
+    app = FastAPI()
+    app.state.allowed_origins = frozenset({"https://grades.example.edu"})
+    app.middleware("http")(validate_request_origin)
+
+    @app.post("/action")
+    def action() -> dict[str, bool]:
+        return {"ok": True}
+
+    with TestClient(app) as test_client:
+        response = test_client.post(
+            "/action",
+            headers={
+                "origin": "https://grades.example.edu",
+                "x-requested-with": "XMLHttpRequest",
+            },
+        )
+
+    assert response.status_code == 200
+    assert reads == []
+
+
 def test_non_browser_requests_are_allowed(client: TestClient) -> None:
     assert client.post("/action").status_code == 200
 

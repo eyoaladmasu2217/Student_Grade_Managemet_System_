@@ -1,41 +1,21 @@
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
+import { apiRequest, GradeBand, jsonBody } from "./api";
 import {
-  AcademicYear,
-  apiRequest,
-  Course,
-  GradeBand,
-  jsonBody,
-  Section,
-  Term,
-  User,
-} from "./api";
-import { loadAllUsers } from "./adminUsers";
-
-interface AdminData {
-  years: AcademicYear[];
-  terms: Term[];
-  courses: Course[];
-  users: User[];
-  sections: Section[];
-  gradeBands: GradeBand[];
-}
-
-const emptyData: AdminData = {
-  years: [],
-  terms: [],
-  courses: [],
-  users: [],
-  sections: [],
-  gradeBands: [],
-};
+  AdminRefreshScope,
+  emptyAdminData,
+  loadAdminData,
+} from "./adminData";
 
 function messageOf(error: unknown): string {
   return error instanceof Error ? error.message : "The request could not be completed.";
 }
 
 export default function AdminDashboard() {
-  const [data, setData] = useState(emptyData);
-  const [refreshKey, setRefreshKey] = useState(0);
+  const [data, setData] = useState(emptyAdminData);
+  const [refresh, setRefresh] = useState<{ key: number; scope: AdminRefreshScope }>({
+    key: 0,
+    scope: "all",
+  });
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [error, setError] = useState("");
@@ -48,27 +28,9 @@ export default function AdminDashboard() {
       setLoading(true);
       setLoadError("");
       try {
-        const [years, courses, users, sections, gradeBands] = await Promise.all([
-          apiRequest<AcademicYear[]>("/api/academic-years"),
-          apiRequest<Course[]>("/api/courses"),
-          loadAllUsers(),
-          apiRequest<Section[]>("/api/sections"),
-          apiRequest<GradeBand[]>("/api/grade-scale"),
-        ]);
-        const termLists = await Promise.all(
-          years.map((year) =>
-            apiRequest<Term[]>(`/api/academic-years/${year.id}/terms`),
-          ),
-        );
+        const patch = await loadAdminData(refresh.scope);
         if (active) {
-          setData({
-            years,
-            terms: termLists.flat(),
-            courses,
-            users,
-            sections,
-            gradeBands,
-          });
+          setData((current) => ({ ...current, ...patch }));
         }
       } catch (loadError) {
         if (active) {
@@ -85,13 +47,14 @@ export default function AdminDashboard() {
     return () => {
       active = false;
     };
-  }, [refreshKey]);
+  }, [refresh]);
 
   async function save(
     event: FormEvent<HTMLFormElement>,
     action: () => Promise<unknown>,
     successMessage: string,
     resetForm = true,
+    scope: AdminRefreshScope = "all",
   ) {
     const form = event.currentTarget;
     event.preventDefault();
@@ -102,7 +65,7 @@ export default function AdminDashboard() {
       await action();
       if (resetForm) form.reset();
       setMessage(successMessage);
-      setRefreshKey((key) => key + 1);
+      setRefresh((current) => ({ key: current.key + 1, scope }));
     } catch (saveError) {
       setError(messageOf(saveError));
     } finally {
@@ -121,6 +84,8 @@ export default function AdminDashboard() {
       event,
       () => apiRequest("/api/academic-years", { method: "POST", body: jsonBody(payload) }),
       "Academic year created.",
+      true,
+      "calendar",
     );
   }
 
@@ -140,6 +105,8 @@ export default function AdminDashboard() {
           body: jsonBody(payload),
         }),
       "Academic term created.",
+      true,
+      "calendar",
     );
   }
 
@@ -155,6 +122,8 @@ export default function AdminDashboard() {
       event,
       () => apiRequest("/api/users", { method: "POST", body: jsonBody(payload) }),
       "Account created.",
+      true,
+      "users",
     );
   }
 
@@ -169,6 +138,8 @@ export default function AdminDashboard() {
       event,
       () => apiRequest("/api/courses", { method: "POST", body: jsonBody(payload) }),
       "Course created.",
+      true,
+      "catalog",
     );
   }
 
@@ -188,6 +159,8 @@ export default function AdminDashboard() {
           body: jsonBody(payload),
         }),
       "Course section created.",
+      true,
+      "sections",
     );
   }
 
@@ -203,6 +176,8 @@ export default function AdminDashboard() {
           body: jsonBody(payload),
         }),
       "Student enrolled.",
+      true,
+      "sections",
     );
   }
 
@@ -216,6 +191,7 @@ export default function AdminDashboard() {
         }),
       "Grade scale saved.",
       false,
+      "scale",
     );
   }
 
@@ -228,16 +204,28 @@ export default function AdminDashboard() {
     }));
   }
 
-  const students = data.users.filter((user) => user.role === "student");
-  const instructors = data.users.filter((user) => user.role === "instructor");
-  const yearById = new Map(data.years.map((year) => [year.id, year.name]));
-  const stats = [
-    { label: "Academic years", value: data.years.length, hint: "Calendar records" },
-    { label: "Terms", value: data.terms.length, hint: "Across all years" },
-    { label: "Courses", value: data.courses.length, hint: "Catalog entries" },
-    { label: "Sections", value: data.sections.length, hint: "Scheduled classes" },
-    { label: "Students", value: students.length, hint: "Active accounts" },
-  ];
+  const students = useMemo(
+    () => data.users.filter((user) => user.role === "student"),
+    [data.users],
+  );
+  const instructors = useMemo(
+    () => data.users.filter((user) => user.role === "instructor"),
+    [data.users],
+  );
+  const yearById = useMemo(
+    () => new Map(data.years.map((year) => [year.id, year.name])),
+    [data.years],
+  );
+  const stats = useMemo(
+    () => [
+      { label: "Academic years", value: data.years.length, hint: "Calendar records" },
+      { label: "Terms", value: data.terms.length, hint: "Across all years" },
+      { label: "Courses", value: data.courses.length, hint: "Catalog entries" },
+      { label: "Sections", value: data.sections.length, hint: "Scheduled classes" },
+      { label: "Students", value: students.length, hint: "Active accounts" },
+    ],
+    [data.years, data.terms, data.courses, data.sections, students.length],
+  );
 
   return (
     <section
@@ -298,7 +286,9 @@ export default function AdminDashboard() {
           <button
             className="secondary-button"
             type="button"
-            onClick={() => setRefreshKey((key) => key + 1)}
+            onClick={() =>
+              setRefresh((current) => ({ key: current.key + 1, scope: "all" }))
+            }
           >
             Retry loading setup
           </button>

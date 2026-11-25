@@ -7,9 +7,12 @@ from pydantic import BaseModel, Field
 
 from app.auth import get_current_user
 from app.database import get_db
-from app.grade_math import calculate_grade_for_student
+from app.grade_math import (
+    calculate_grades_for_students,
+    load_scores_for_students,
+)
 from app.gradebook import require_category_manager, require_section_manager
-from app.grade_scale import letter_grade_for
+from app.grade_scale import letter_grade_from, load_grade_bands
 
 router = APIRouter(tags=["scores"])
 
@@ -180,37 +183,25 @@ def get_gradebook(
         """,
         (section_id,),
     ).fetchall()
-    grade_rows: list[StudentGradebookRow] = []
-    for student in students:
-        scores = connection.execute(
-            """
-            SELECT assessment_id, points
-            FROM assessment_scores
-            WHERE student_id = ? AND assessment_id IN (
-                SELECT assessments.id
-                FROM assessments
-                JOIN assessment_categories
-                    ON assessment_categories.id = assessments.category_id
-                WHERE assessment_categories.section_id = ?
-            )
-            """,
-            (student["id"], section_id),
-        ).fetchall()
-        summary = calculate_grade_for_student(connection, section_id, student["id"])
-        grade_rows.append(
-            StudentGradebookRow(
-                student_id=student["id"],
-                student_name=student["full_name"],
-                student_email=student["email"],
-                scores={row["assessment_id"]: row["points"] for row in scores},
-                weighted_points=summary.weighted_points,
-                graded_weight=summary.graded_weight,
-                current_percentage=summary.current_percentage,
-                final_percentage=summary.final_percentage,
-                letter_grade=letter_grade_for(connection, summary.final_percentage),
-                is_complete=summary.is_complete,
-            )
+    student_ids = [student["id"] for student in students]
+    summaries = calculate_grades_for_students(connection, section_id, student_ids)
+    scores_by_student = load_scores_for_students(connection, section_id, student_ids)
+    bands = load_grade_bands(connection)
+    grade_rows = [
+        StudentGradebookRow(
+            student_id=student["id"],
+            student_name=student["full_name"],
+            student_email=student["email"],
+            scores=scores_by_student[student["id"]],
+            weighted_points=summaries[student["id"]].weighted_points,
+            graded_weight=summaries[student["id"]].graded_weight,
+            current_percentage=summaries[student["id"]].current_percentage,
+            final_percentage=summaries[student["id"]].final_percentage,
+            letter_grade=letter_grade_from(bands, summaries[student["id"]].final_percentage),
+            is_complete=summaries[student["id"]].is_complete,
         )
+        for student in students
+    ]
 
     return GradebookResponse(
         section_id=section_id,

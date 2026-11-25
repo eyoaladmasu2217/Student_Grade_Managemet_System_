@@ -11,6 +11,13 @@ UNSAFE_METHODS = frozenset({"POST", "PUT", "PATCH", "DELETE"})
 REJECTED_FETCH_SITES = frozenset({"cross-site", "same-site"})
 
 
+def _allowed_origins(request: Request) -> frozenset[str]:
+    configured = getattr(request.app.state, "allowed_origins", None)
+    if configured is None:
+        return frozenset(frontend_origins())
+    return configured
+
+
 def _rejected(detail: str) -> JSONResponse:
     logger.warning("Blocked unsafe request: %s", detail)
     return JSONResponse(
@@ -30,7 +37,7 @@ async def validate_request_origin(
     if origin is None and fetch_site is None:
         return await call_next(request)
 
-    if origin is not None and origin.rstrip("/") not in frontend_origins():
+    if origin is not None and origin.rstrip("/") not in _allowed_origins(request):
         return _rejected("Request origin is not allowed")
 
     if (origin is not None or fetch_site is not None) and request.headers.get(

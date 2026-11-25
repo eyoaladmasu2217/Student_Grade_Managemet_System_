@@ -22,6 +22,7 @@ router = APIRouter(prefix="/api/auth", tags=["authentication"])
 SESSION_COOKIE = "sgms_session"
 SESSION_DURATION = timedelta(hours=12)
 SESSION_IDLE_TIMEOUT = timedelta(hours=2)
+ACTIVITY_WRITE_INTERVAL = timedelta(minutes=1)
 
 
 def parse_timestamp(value: str) -> datetime:
@@ -103,11 +104,12 @@ def get_current_user(
         connection.commit()
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Session has expired")
 
-    connection.execute(
-        "UPDATE sessions SET last_seen_at = ? WHERE id = ?",
-        (now.isoformat(), row["session_id"]),
-    )
-    connection.commit()
+    if now - last_seen >= ACTIVITY_WRITE_INTERVAL:
+        connection.execute(
+            "UPDATE sessions SET last_seen_at = ? WHERE id = ?",
+            (now.isoformat(), row["session_id"]),
+        )
+        connection.commit()
     return row
 
 
@@ -248,7 +250,6 @@ def change_password(
     user: Annotated[sqlite3.Row, Depends(get_current_user)],
     connection: Annotated[sqlite3.Connection, Depends(get_db)],
 ) -> UserResponse:
-    connection.execute("BEGIN IMMEDIATE")
     account = connection.execute(
         "SELECT password_hash FROM users WHERE id = ? AND is_active = 1",
         (user["id"],),
@@ -277,9 +278,21 @@ def change_password(
 
     token = create_session_token()
     expires_at = datetime.now(timezone.utc) + SESSION_DURATION
+    new_hash = hash_password(payload.new_password)
+
+    connection.execute("BEGIN IMMEDIATE")
+    latest = connection.execute(
+        "SELECT password_hash FROM users WHERE id = ? AND is_active = 1",
+        (user["id"],),
+    ).fetchone()
+    if latest is None or latest["password_hash"] != account["password_hash"]:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Password changed in another session. Try again.",
+        )
     connection.execute(
         "UPDATE users SET password_hash = ? WHERE id = ?",
-        (hash_password(payload.new_password), user["id"]),
+        (new_hash, user["id"]),
     )
     connection.execute("DELETE FROM sessions WHERE user_id = ?", (user["id"],))
     log_security_event("password_change", "success", user_id=user["id"])

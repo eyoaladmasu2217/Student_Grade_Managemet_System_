@@ -18,6 +18,9 @@ def connect() -> sqlite3.Connection:
     connection = sqlite3.connect(DATABASE_PATH, timeout=10, check_same_thread=False)
     connection.row_factory = sqlite3.Row
     connection.execute("PRAGMA foreign_keys = ON")
+    connection.execute("PRAGMA journal_mode = WAL")
+    connection.execute("PRAGMA synchronous = NORMAL")
+    connection.execute("PRAGMA busy_timeout = 10000")
     return connection
 
 
@@ -32,17 +35,17 @@ def get_db() -> Iterator[sqlite3.Connection]:
 def purge_expired_sessions() -> int:
     now = datetime.now(timezone.utc)
     with closing(connect()) as connection:
-        expired_ids = [
-            row["id"]
-            for row in connection.execute("SELECT id, expires_at FROM sessions")
-            if datetime.fromisoformat(row["expires_at"].replace("Z", "+00:00")) <= now
-        ]
-        if expired_ids:
-            connection.executemany(
-                "DELETE FROM sessions WHERE id = ?", [(session_id,) for session_id in expired_ids]
-            )
-            connection.commit()
-    return len(expired_ids)
+        cursor = connection.execute(
+            "DELETE FROM sessions WHERE expires_at <= ?", (now.isoformat(),)
+        )
+        removed = cursor.rowcount
+        cursor = connection.execute(
+            "DELETE FROM sessions WHERE expires_at <= ?",
+            (now.strftime("%Y-%m-%dT%H:%M:%fZ"),),
+        )
+        removed += cursor.rowcount
+        connection.commit()
+    return removed
 
 
 def initialize_database() -> None:
@@ -70,6 +73,9 @@ def initialize_database() -> None:
 
             CREATE INDEX IF NOT EXISTS sessions_user_id_idx ON sessions(user_id);
             CREATE INDEX IF NOT EXISTS sessions_expires_at_idx ON sessions(expires_at);
+
+            CREATE INDEX IF NOT EXISTS users_name_email_idx
+                ON users(full_name, email, id);
 
             CREATE TABLE IF NOT EXISTS academic_years (
                 id INTEGER PRIMARY KEY,

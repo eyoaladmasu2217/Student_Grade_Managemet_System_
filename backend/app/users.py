@@ -48,7 +48,7 @@ def list_users(
             SELECT id, email, full_name, role, is_active
             FROM users
             WHERE role = ?
-            ORDER BY full_name, email
+            ORDER BY full_name, email, id
             LIMIT ? OFFSET ?
             """,
             (role, limit, offset),
@@ -58,7 +58,7 @@ def list_users(
             """
             SELECT id, email, full_name, role, is_active
             FROM users
-            ORDER BY full_name, email
+            ORDER BY full_name, email, id
             LIMIT ? OFFSET ?
             """,
             (limit, offset),
