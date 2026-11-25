@@ -71,25 +71,32 @@ def update_grade_scale(
     return [GradeBandResponse(**dict(row)) for row in rows]
 
 
-def letter_grade_for(
+def load_grade_bands(
     connection: sqlite3.Connection,
+) -> tuple[tuple[float, str], ...]:
+    rows = connection.execute(
+        "SELECT minimum_percentage, code FROM grade_bands ORDER BY minimum_percentage DESC"
+    ).fetchall()
+    return tuple((row["minimum_percentage"], row["code"]) for row in rows)
+
+
+def letter_grade_from(
+    bands: tuple[tuple[float, str], ...],
     percentage: float | None,
 ) -> str | None:
     if percentage is None:
         return None
-    row = connection.execute(
-        """
-        SELECT code
-        FROM grade_bands
-        WHERE minimum_percentage <= ?
-        ORDER BY minimum_percentage DESC
-        LIMIT 1
-        """,
-        (percentage,),
-    ).fetchone()
-    if row is None:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Grade scale does not cover this percentage",
-        )
-    return row["code"]
+    for minimum, code in bands:
+        if percentage >= minimum:
+            return code
+    raise HTTPException(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        detail="Grade scale does not cover this percentage",
+    )
+
+
+def letter_grade_for(
+    connection: sqlite3.Connection,
+    percentage: float | None,
+) -> str | None:
+    return letter_grade_from(load_grade_bands(connection), percentage)
