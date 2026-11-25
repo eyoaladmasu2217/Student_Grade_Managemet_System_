@@ -74,6 +74,9 @@ def initialize_database() -> None:
             CREATE INDEX IF NOT EXISTS sessions_user_id_idx ON sessions(user_id);
             CREATE INDEX IF NOT EXISTS sessions_expires_at_idx ON sessions(expires_at);
 
+            CREATE INDEX IF NOT EXISTS users_name_email_idx
+                ON users(full_name, email, id);
+
             CREATE TABLE IF NOT EXISTS academic_years (
                 id INTEGER PRIMARY KEY,
                 name TEXT NOT NULL UNIQUE COLLATE NOCASE,
