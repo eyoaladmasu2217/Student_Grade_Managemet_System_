@@ -22,6 +22,7 @@ router = APIRouter(prefix="/api/auth", tags=["authentication"])
 SESSION_COOKIE = "sgms_session"
 SESSION_DURATION = timedelta(hours=12)
 SESSION_IDLE_TIMEOUT = timedelta(hours=2)
+ACTIVITY_WRITE_INTERVAL = timedelta(minutes=1)
 
 
 def parse_timestamp(value: str) -> datetime:
@@ -103,11 +104,12 @@ def get_current_user(
         connection.commit()
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Session has expired")
 
-    connection.execute(
-        "UPDATE sessions SET last_seen_at = ? WHERE id = ?",
-        (now.isoformat(), row["session_id"]),
-    )
-    connection.commit()
+    if now - last_seen >= ACTIVITY_WRITE_INTERVAL:
+        connection.execute(
+            "UPDATE sessions SET last_seen_at = ? WHERE id = ?",
+            (now.isoformat(), row["session_id"]),
+        )
+        connection.commit()
     return row
 
 
