@@ -49,6 +49,7 @@ async def handle_validation_error(
 
 def create_app() -> FastAPI:
     production = is_production()
+    origins = frontend_origins()
     api = FastAPI(
         title="Student Grade Management API",
         version="0.1.0",
@@ -60,10 +61,11 @@ def create_app() -> FastAPI:
     )
 
     api.add_exception_handler(RequestValidationError, handle_validation_error)
+    api.state.allowed_origins = frozenset(origins)
 
     api.add_middleware(
         CORSMiddleware,
-        allow_origins=frontend_origins(),
+        allow_origins=origins,
         allow_credentials=True,
         allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
         allow_headers=["Authorization", "Content-Type", "X-Requested-With"],
