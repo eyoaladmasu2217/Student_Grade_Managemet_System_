@@ -77,6 +77,36 @@ def calculate_grade_for_student(
     return _summary_from(categories)
 
 
+def load_scores_for_students(
+    connection: sqlite3.Connection,
+    section_id: int,
+    student_ids: Sequence[int],
+) -> dict[int, dict[int, float]]:
+    if not student_ids:
+        return {}
+    placeholders = ", ".join("(?)" for _ in student_ids)
+    rows = connection.execute(
+        f"""
+        WITH students(id) AS (VALUES {placeholders})
+        SELECT assessment_scores.student_id, assessment_scores.assessment_id,
+               assessment_scores.points
+        FROM students
+        JOIN assessment_scores ON assessment_scores.student_id = students.id
+        JOIN assessments ON assessments.id = assessment_scores.assessment_id
+        JOIN assessment_categories
+            ON assessment_categories.id = assessments.category_id
+        WHERE assessment_categories.section_id = ?
+        """,
+        (*student_ids, section_id),
+    ).fetchall()
+    scores: dict[int, dict[int, float]] = {
+        student_id: {} for student_id in student_ids
+    }
+    for row in rows:
+        scores[row["student_id"]][row["assessment_id"]] = row["points"]
+    return scores
+
+
 def calculate_grades_for_students(
     connection: sqlite3.Connection,
     section_id: int,

@@ -4,6 +4,7 @@ import pytest
 
 from app import database
 from app.grade_math import calculate_grade_for_student, calculate_grades_for_students
+from app.scores import get_gradebook
 
 
 @pytest.fixture
@@ -94,3 +95,14 @@ def test_batch_summaries_use_one_query(db_path) -> None:
 def test_batch_summaries_handle_an_empty_student_list(db_path) -> None:
     with closing(database.connect()) as connection:
         assert calculate_grades_for_students(connection, 1, []) == {}
+
+
+def test_gradebook_uses_a_fixed_number_of_queries(db_path) -> None:
+    with closing(database.connect()) as connection:
+        queries: list[str] = []
+        connection.set_trace_callback(queries.append)
+        gradebook = get_gradebook(1, {"id": 1, "role": "admin"}, connection)
+
+    assert len(gradebook.students) == 3
+    assert gradebook.students[0].scores == {1: 90, 2: 80, 3: 20}
+    assert len(queries) <= 8
