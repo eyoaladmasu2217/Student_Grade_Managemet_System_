@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import {
   AcademicYear,
   apiRequest,
@@ -228,16 +228,28 @@ export default function AdminDashboard() {
     }));
   }
 
-  const students = data.users.filter((user) => user.role === "student");
-  const instructors = data.users.filter((user) => user.role === "instructor");
-  const yearById = new Map(data.years.map((year) => [year.id, year.name]));
-  const stats = [
-    { label: "Academic years", value: data.years.length, hint: "Calendar records" },
-    { label: "Terms", value: data.terms.length, hint: "Across all years" },
-    { label: "Courses", value: data.courses.length, hint: "Catalog entries" },
-    { label: "Sections", value: data.sections.length, hint: "Scheduled classes" },
-    { label: "Students", value: students.length, hint: "Active accounts" },
-  ];
+  const students = useMemo(
+    () => data.users.filter((user) => user.role === "student"),
+    [data.users],
+  );
+  const instructors = useMemo(
+    () => data.users.filter((user) => user.role === "instructor"),
+    [data.users],
+  );
+  const yearById = useMemo(
+    () => new Map(data.years.map((year) => [year.id, year.name])),
+    [data.years],
+  );
+  const stats = useMemo(
+    () => [
+      { label: "Academic years", value: data.years.length, hint: "Calendar records" },
+      { label: "Terms", value: data.terms.length, hint: "Across all years" },
+      { label: "Courses", value: data.courses.length, hint: "Catalog entries" },
+      { label: "Sections", value: data.sections.length, hint: "Scheduled classes" },
+      { label: "Students", value: students.length, hint: "Active accounts" },
+    ],
+    [data.years, data.terms, data.courses, data.sections, students.length],
+  );
 
   return (
     <section
