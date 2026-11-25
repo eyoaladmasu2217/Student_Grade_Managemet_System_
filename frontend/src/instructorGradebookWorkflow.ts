@@ -76,10 +76,33 @@ export function createInstructorGradebookWorkflow(
     }
   }
 
+  async function refreshGradebook(includeCorrections: boolean): Promise<void> {
+    const sectionId = state.sectionId;
+    if (!sectionId) return;
+
+    const version = ++loadVersion;
+    const section = Number(sectionId);
+    try {
+      if (includeCorrections) {
+        const [gradebook, corrections] = await Promise.all([
+          request<Gradebook>(`/api/sections/${section}/gradebook`),
+          request<GradeCorrection[]>(`/api/sections/${section}/corrections`),
+        ]);
+        if (version === loadVersion) update({ gradebook, corrections });
+      } else {
+        const gradebook = await request<Gradebook>(`/api/sections/${section}/gradebook`);
+        if (version === loadVersion) update({ gradebook });
+      }
+    } catch (error) {
+      if (version === loadVersion) update({ error: messageOf(error) });
+    }
+  }
+
   async function write(
     action: () => Promise<unknown>,
     successMessage: string,
     fieldErrorKey = "",
+    refresh: "all" | "gradebook" | "gradebook-and-corrections" = "all",
   ): Promise<boolean> {
     const version = selectionVersion;
     update({
@@ -94,7 +117,11 @@ export function createInstructorGradebookWorkflow(
       await action();
       if (version !== selectionVersion) return true;
       update({ message: successMessage });
-      await loadSelectedSection();
+      if (refresh === "all") {
+        await loadSelectedSection();
+      } else {
+        await refreshGradebook(refresh === "gradebook-and-corrections");
+      }
       return true;
     } catch (error) {
       if (version !== selectionVersion) return false;
@@ -181,6 +208,7 @@ export function createInstructorGradebookWorkflow(
         () => request(path, { method: "PUT", body: jsonBody(payload) }),
         "",
         key,
+        released ? "gradebook-and-corrections" : "gradebook",
       );
     },
     releaseGrades() {

@@ -155,6 +155,26 @@ describe("instructor gradebook workflow", () => {
     });
   });
 
+  it("refreshes only the gradebook after a draft score is saved", async () => {
+    const calls: string[] = [];
+    const request = controlledRequest(async (path) => {
+      calls.push(path);
+      if (path.endsWith("/gradebook")) return gradebook();
+      return [];
+    });
+    const workflow = createInstructorGradebookWorkflow(request);
+    await workflow.selectSection("7");
+
+    expect(await workflow.saveScore(12, 31, 82.5, "")).toBe(true);
+
+    const count = (suffix: string) =>
+      calls.filter((path) => path.endsWith(suffix)).length;
+    expect(count("/gradebook")).toBe(2);
+    expect(count("/categories")).toBe(1);
+    expect(count("/enrollments")).toBe(1);
+    expect(count("/corrections")).toBe(1);
+  });
+
   it("records released-score corrections through the correction endpoint", async () => {
     const calls: Array<{ path: string; init: RequestInit }> = [];
     const request = controlledRequest(async (path, init) => {
