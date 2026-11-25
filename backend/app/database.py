@@ -35,17 +35,17 @@ def get_db() -> Iterator[sqlite3.Connection]:
 def purge_expired_sessions() -> int:
     now = datetime.now(timezone.utc)
     with closing(connect()) as connection:
-        expired_ids = [
-            row["id"]
-            for row in connection.execute("SELECT id, expires_at FROM sessions")
-            if datetime.fromisoformat(row["expires_at"].replace("Z", "+00:00")) <= now
-        ]
-        if expired_ids:
-            connection.executemany(
-                "DELETE FROM sessions WHERE id = ?", [(session_id,) for session_id in expired_ids]
-            )
-            connection.commit()
-    return len(expired_ids)
+        cursor = connection.execute(
+            "DELETE FROM sessions WHERE expires_at <= ?", (now.isoformat(),)
+        )
+        removed = cursor.rowcount
+        cursor = connection.execute(
+            "DELETE FROM sessions WHERE expires_at <= ?",
+            (now.strftime("%Y-%m-%dT%H:%M:%fZ"),),
+        )
+        removed += cursor.rowcount
+        connection.commit()
+    return removed
 
 
 def initialize_database() -> None:
