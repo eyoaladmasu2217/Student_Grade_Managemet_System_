@@ -5,6 +5,7 @@ from collections import defaultdict
 WINDOW_SECONDS = 15 * 60
 MAX_FAILURES_PER_ACCOUNT = 10
 MAX_FAILURES_PER_ADDRESS = 30
+SWEEP_INTERVAL_SECONDS = 60
 
 
 class LoginThrottle:
@@ -14,15 +15,31 @@ class LoginThrottle:
         self._lock = threading.Lock()
         self._accounts: dict[tuple[str, str], list[float]] = defaultdict(list)
         self._addresses: dict[str, list[float]] = defaultdict(list)
+        self._last_sweep = time.monotonic()
 
     @staticmethod
     def _recent(attempts: list[float], now: float) -> list[float]:
         return [moment for moment in attempts if now - moment < WINDOW_SECONDS]
 
+    def _live_entries(self, entries: dict, now: float) -> dict:
+        return {
+            key: recent
+            for key, attempts in entries.items()
+            if (recent := self._recent(attempts, now))
+        }
+
+    def _sweep(self, now: float) -> None:
+        if now - self._last_sweep < SWEEP_INTERVAL_SECONDS:
+            return
+        self._last_sweep = now
+        self._accounts = defaultdict(list, self._live_entries(self._accounts, now))
+        self._addresses = defaultdict(list, self._live_entries(self._addresses, now))
+
     def retry_after(self, email: str, address: str) -> int | None:
         now = time.monotonic()
         account_key = (email.casefold(), address)
         with self._lock:
+            self._sweep(now)
             account = self._recent(self._accounts[account_key], now)
             address_attempts = self._recent(self._addresses[address], now)
             self._accounts[account_key] = account
@@ -41,6 +58,7 @@ class LoginThrottle:
         now = time.monotonic()
         account_key = (email.casefold(), address)
         with self._lock:
+            self._sweep(now)
             self._accounts[account_key] = self._recent(self._accounts[account_key], now)
             self._addresses[address] = self._recent(self._addresses[address], now)
             self._accounts[account_key].append(now)

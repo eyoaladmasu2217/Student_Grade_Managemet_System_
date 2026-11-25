@@ -1,11 +1,18 @@
 from contextlib import closing
 import sqlite3
+import time
 
 import pytest
 from fastapi.testclient import TestClient
 
 from app import database
-from app.login_guard import MAX_FAILURES_PER_ACCOUNT, MAX_FAILURES_PER_ADDRESS, login_throttle
+from app.login_guard import (
+    MAX_FAILURES_PER_ACCOUNT,
+    MAX_FAILURES_PER_ADDRESS,
+    WINDOW_SECONDS,
+    LoginThrottle,
+    login_throttle,
+)
 from app.main import app
 from app.security import hash_password
 
@@ -32,6 +39,30 @@ def client(tmp_path, monkeypatch: pytest.MonkeyPatch):
 
 def attempt(client: TestClient, email: str, password: str):
     return client.post("/api/auth/login", json={"email": email, "password": password})
+
+
+def test_expired_throttle_keys_are_swept() -> None:
+    guard = LoginThrottle()
+    old = time.monotonic() - WINDOW_SECONDS - 1
+    guard._accounts[("old@example.edu", "old-address")] = [old]
+    guard._addresses["old-address"] = [old]
+    guard._last_sweep = 0.0
+
+    guard.retry_after("new@example.edu", "new-address")
+
+    assert ("old@example.edu", "old-address") not in guard._accounts
+    assert "old-address" not in guard._addresses
+
+
+def test_recent_throttle_keys_survive_a_sweep() -> None:
+    guard = LoginThrottle()
+    guard.record_failure("active@example.edu", "active-address")
+    guard._last_sweep = 0.0
+
+    guard.retry_after("active@example.edu", "active-address")
+
+    assert ("active@example.edu", "active-address") in guard._accounts
+    assert "active-address" in guard._addresses
 
 
 def test_repeated_failures_lock_the_account(client: TestClient) -> None:
