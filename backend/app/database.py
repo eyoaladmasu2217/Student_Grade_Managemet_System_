@@ -18,6 +18,9 @@ def connect() -> sqlite3.Connection:
     connection = sqlite3.connect(DATABASE_PATH, timeout=10, check_same_thread=False)
     connection.row_factory = sqlite3.Row
     connection.execute("PRAGMA foreign_keys = ON")
+    connection.execute("PRAGMA journal_mode = WAL")
+    connection.execute("PRAGMA synchronous = NORMAL")
+    connection.execute("PRAGMA busy_timeout = 10000")
     return connection
 
 
