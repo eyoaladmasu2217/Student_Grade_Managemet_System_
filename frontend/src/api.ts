@@ -107,6 +107,33 @@ export interface ReleasedGrade {
   released_at: string;
 }
 
+export interface SimulationCategory {
+  id: number;
+  name: string;
+  weight: number;
+}
+
+export interface SimulationAssessment {
+  id: number;
+  category_id: number;
+  title: string;
+  max_points: number;
+  due_date: string | null;
+  points: number | null;
+}
+
+export interface WhatIfSimulation {
+  section_id: number;
+  course_code: string;
+  course_title: string;
+  section_code: string;
+  term_name: string;
+  grades_released: boolean;
+  categories: SimulationCategory[];
+  assessments: SimulationAssessment[];
+  grade_bands: GradeBand[];
+}
+
 export interface GradeCorrection {
   id: number;
   section_id: number;
