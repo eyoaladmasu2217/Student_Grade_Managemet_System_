@@ -165,7 +165,7 @@ describe("instructor gradebook workflow", () => {
     const workflow = createInstructorGradebookWorkflow(request);
     await workflow.selectSection("7");
 
-    expect(await workflow.saveScore(12, 31, 82.5, "")).toBe(true);
+    expect(await workflow.saveScore(12, 31, 82.5, "grading_error", "")).toBe(true);
 
     const count = (suffix: string) =>
       calls.filter((path) => path.endsWith(suffix)).length;
@@ -186,7 +186,13 @@ describe("instructor gradebook workflow", () => {
     await workflow.selectSection("7");
 
     expect(
-      await workflow.saveScore(12, 31, 82.5, "Correcting a grading error"),
+      await workflow.saveScore(
+        12,
+        31,
+        82.5,
+        "grading_error",
+        "Correcting a grading error",
+      ),
     ).toBe(true);
 
     const correction = calls.find((call) =>
@@ -195,6 +201,7 @@ describe("instructor gradebook workflow", () => {
     expect(correction?.init.method).toBe("PUT");
     expect(JSON.parse(String(correction?.init.body))).toEqual({
       points: 82.5,
+      reason_code: "grading_error",
       reason: "Correcting a grading error",
     });
     expect(calls.filter((call) => call.path.endsWith("/corrections"))).toHaveLength(2);

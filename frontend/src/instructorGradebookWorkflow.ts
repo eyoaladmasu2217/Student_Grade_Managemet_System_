@@ -1,6 +1,7 @@
 import {
   apiRequest,
   Category,
+  CorrectionReasonCode,
   Enrollment,
   Gradebook,
   GradeCorrection,
@@ -196,6 +197,7 @@ export function createInstructorGradebookWorkflow(
       assessmentId: number,
       studentId: number,
       points: number,
+      reasonCode: CorrectionReasonCode,
       reason: string,
     ) {
       const key = `score:${assessmentId}:${studentId}`;
@@ -203,10 +205,12 @@ export function createInstructorGradebookWorkflow(
       const path = released
         ? `/api/assessments/${assessmentId}/scores/${studentId}/correction`
         : `/api/assessments/${assessmentId}/scores/${studentId}`;
-      const payload = released ? { points, reason } : { points };
+      const payload = released
+        ? { points, reason_code: reasonCode, reason }
+        : { points };
       return write(
         () => request(path, { method: "PUT", body: jsonBody(payload) }),
-        "",
+        released ? "Correction request sent for administrator approval." : "",
         key,
         released ? "gradebook-and-corrections" : "gradebook",
       );

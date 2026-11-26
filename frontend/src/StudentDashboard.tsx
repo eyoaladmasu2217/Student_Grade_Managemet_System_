@@ -1,6 +1,18 @@
 import { useEffect, useMemo, useState } from "react";
-import { apiRequest, ReleasedGrade } from "./api";
+import {
+  apiRequest,
+  ReleasedGrade,
+  Section,
+  WhatIfSimulation,
+} from "./api";
 import { clampPercentage, gradeTone } from "./gradeDisplay";
+import {
+  letterForPercentage,
+  projectGrade,
+  scoreNeededForTarget,
+  SimulationScenario,
+} from "./gradeSimulator";
+import { loadSimulationSections, loadWhatIfSimulation } from "./whatIfData";
 import { filterReleasedGrades } from "./studentGradeFilters";
 
 export default function StudentDashboard() {
@@ -10,6 +22,14 @@ export default function StudentDashboard() {
   const [reloadKey, setReloadKey] = useState(0);
   const [search, setSearch] = useState("");
   const [selectedTerm, setSelectedTerm] = useState("all");
+  const [sections, setSections] = useState<Section[]>([]);
+  const [simulationSectionId, setSimulationSectionId] = useState("");
+  const [simulation, setSimulation] = useState<WhatIfSimulation | null>(null);
+  const [scenario, setScenario] = useState<Record<number, string>>({});
+  const [targetLetter, setTargetLetter] = useState("");
+  const [solveAssessmentId, setSolveAssessmentId] = useState("");
+  const [simulationLoading, setSimulationLoading] = useState(false);
+  const [simulationError, setSimulationError] = useState("");
 
   useEffect(() => {
     let active = true;
@@ -35,6 +55,58 @@ export default function StudentDashboard() {
       active = false;
     };
   }, [reloadKey]);
+
+  useEffect(() => {
+    let active = true;
+    loadSimulationSections()
+      .then((result) => {
+        if (active) setSections(result);
+      })
+      .catch(() => {
+        if (active) setSimulationError("Unable to load your enrolled sections.");
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!simulationSectionId) {
+      setSimulation(null);
+      return;
+    }
+    let active = true;
+    setSimulationLoading(true);
+    setSimulationError("");
+    loadWhatIfSimulation(Number(simulationSectionId))
+      .then((result) => {
+        if (!active) return;
+        setSimulation(result);
+        const initial: Record<number, string> = {};
+        for (const assessment of result.assessments) {
+          initial[assessment.id] =
+            assessment.points === null ? "" : String(assessment.points);
+        }
+        setScenario(initial);
+        setTargetLetter(result.grade_bands[0]?.code ?? "");
+        const last = result.assessments[result.assessments.length - 1];
+        setSolveAssessmentId(last ? String(last.id) : "");
+      })
+      .catch((loadError: unknown) => {
+        if (active) {
+          setSimulation(null);
+          setSimulationError(
+            loadError instanceof Error ? loadError.message : "Unable to load the simulator.",
+          );
+        }
+      })
+      .finally(() => {
+        if (active) setSimulationLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [simulationSectionId]);
 
   const sortedGrades = useMemo(
     () =>
@@ -76,6 +148,38 @@ export default function StudentDashboard() {
         selectedTerm === "all" ? null : Number(selectedTerm),
       ),
     [sortedGrades, search, selectedTerm],
+  );
+  const simulationScenario = useMemo<SimulationScenario>(() => {
+    const values: SimulationScenario = {};
+    for (const assessment of simulation?.assessments ?? []) {
+      const value = scenario[assessment.id];
+      values[assessment.id] = value === undefined || value.trim() === "" ? null : Number(value);
+    }
+    return values;
+  }, [simulation, scenario]);
+  const projection = useMemo(
+    () =>
+      simulation
+        ? projectGrade(simulation.categories, simulation.assessments, simulationScenario)
+        : null,
+    [simulation, simulationScenario],
+  );
+  const targetBand = simulation?.grade_bands.find((band) => band.code === targetLetter);
+  const solvedAssessment = simulation?.assessments.find(
+    (assessment) => String(assessment.id) === solveAssessmentId,
+  );
+  const targetScore = useMemo(
+    () =>
+      simulation && targetBand && solvedAssessment
+        ? scoreNeededForTarget(
+            simulation.categories,
+            simulation.assessments,
+            solvedAssessment.id,
+            targetBand.minimum_percentage,
+            simulationScenario,
+          )
+        : null,
+    [simulation, targetBand, solvedAssessment, simulationScenario],
   );
 
   return (
@@ -220,6 +324,186 @@ export default function StudentDashboard() {
           })}
         </div>
       )}
+
+      <section className="panel what-if-panel" aria-labelledby="what-if-title">
+        <div className="panel-heading-row">
+          <div>
+            <p className="eyebrow">PRIVATE PLANNING</p>
+            <h2 id="what-if-title">What-if grade simulator</h2>
+            <p className="panel-note">
+              Try hypothetical scores and see what you need on one assessment to reach a
+              target grade. Nothing you enter here changes a recorded score.
+            </p>
+          </div>
+        </div>
+        <div className="form-grid">
+          <label>
+            Enrolled section
+            <select
+              value={simulationSectionId}
+              onChange={(event) => setSimulationSectionId(event.target.value)}
+            >
+              <option value="">Choose a section</option>
+              {sections.map((section) => (
+                <option key={section.id} value={section.id}>
+                  {section.course_code} · {section.section_code} · {section.term_name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Target grade
+            <select
+              value={targetLetter}
+              disabled={!simulation}
+              onChange={(event) => setTargetLetter(event.target.value)}
+            >
+              {simulation?.grade_bands.map((band) => (
+                <option key={band.code} value={band.code}>
+                  {band.code} ({band.minimum_percentage}%)
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+        {simulationError && (
+          <p className="form-error" role="alert">{simulationError}</p>
+        )}
+        {simulationLoading && (
+          <p className="panel-note" role="status" aria-live="polite">
+            Loading simulator data...
+          </p>
+        )}
+        {simulation && projection && (
+          <>
+            <div className="simulator-summary">
+              <article>
+                <span className="stat-label">Hypothetical course grade</span>
+                <strong>{letterForPercentage(simulation.grade_bands, projection.projected_percentage)}</strong>
+                <span className="stat-hint">
+                  {projection.projected_percentage === null
+                    ? "Add a score for every assessment to project a final grade"
+                    : `${projection.projected_percentage}% projected`}
+                </span>
+              </article>
+              <article>
+                <span className="stat-label">Average over graded categories</span>
+                <strong>
+                  {projection.current_percentage === null
+                    ? "—"
+                    : `${projection.current_percentage}%`}
+                </strong>
+                <span className="stat-hint">
+                  {projection.graded_weight}% of category weights have scores
+                </span>
+              </article>
+            </div>
+            <div className="table-scroll">
+              <table className="data-table">
+                <caption>Assessment scores and hypothetical values</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Assessment</th>
+                    <th scope="col">Category</th>
+                    <th scope="col">Maximum</th>
+                    <th scope="col">Recorded</th>
+                    <th scope="col">Hypothetical score</th>
+                    <th scope="col">Solve for</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {simulation.assessments.map((assessment) => {
+                    const category = simulation.categories.find(
+                      (item) => item.id === assessment.category_id,
+                    );
+                    return (
+                      <tr key={assessment.id}>
+                        <th scope="row">
+                          {assessment.title}
+                          {assessment.due_date && (
+                            <small>Due {new Date(assessment.due_date).toLocaleDateString()}</small>
+                          )}
+                        </th>
+                        <td>
+                          {category?.name ?? "—"}
+                          {category && <small>{category.weight}% of grade</small>}
+                        </td>
+                        <td>{assessment.max_points}</td>
+                        <td>
+                          {simulation.grades_released && assessment.points !== null
+                            ? `${assessment.points} pts`
+                            : "Not visible"}
+                        </td>
+                        <td>
+                          <label className="visually-hidden" htmlFor={`what-if-${assessment.id}`}>
+                            Hypothetical score for {assessment.title}
+                          </label>
+                          <input
+                            id={`what-if-${assessment.id}`}
+                            type="number"
+                            min="0"
+                            max={assessment.max_points}
+                            step="0.01"
+                            placeholder="—"
+                            value={scenario[assessment.id] ?? ""}
+                            onChange={(event) =>
+                              setScenario((current) => ({
+                                ...current,
+                                [assessment.id]: event.target.value,
+                              }))
+                            }
+                          />
+                        </td>
+                        <td>
+                          <input
+                            type="radio"
+                            name="solve-assessment"
+                            value={assessment.id}
+                            checked={String(assessment.id) === solveAssessmentId}
+                            onChange={() => setSolveAssessmentId(String(assessment.id))}
+                            aria-label={`Solve target grade using ${assessment.title}`}
+                          />
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+            {targetScore && solvedAssessment && (
+              <div
+                className={`simulator-target ${targetScore.attainable ? "" : "simulator-target--warning"}`}
+                role="status"
+                aria-live="polite"
+              >
+                {targetScore.reason === "ok" ? (
+                  <p>
+                    To reach <strong>{targetLetter}</strong>, score at least{" "}
+                    <strong>{targetScore.required_points} points</strong> (
+                    {targetScore.required_percentage}%) on {solvedAssessment.title}.
+                  </p>
+                ) : targetScore.reason === "unreachable" ? (
+                  <p>
+                    {targetLetter} is not reachable through {solvedAssessment.title} alone.
+                    The highest attainable course grade with this scenario is{" "}
+                    <strong>{targetScore.maximum_percentage}%</strong>.
+                  </p>
+                ) : (
+                  <p>
+                    Category weights in this section do not total 100%, so a final grade
+                    target cannot be calculated.
+                  </p>
+                )}
+              </div>
+            )}
+          </>
+        )}
+        {!simulation && !simulationLoading && !simulationError && (
+          <p className="empty-state">
+            Choose an enrolled section to explore your assessment scores and targets.
+          </p>
+        )}
+      </section>
     </section>
   );
 }

@@ -1,5 +1,6 @@
 import { FormEvent, memo, useEffect, useMemo, useState, useSyncExternalStore } from "react";
-import { apiRequest, Assessment, Category, Section } from "./api";
+import { apiRequest, Assessment, Category, CorrectionReasonCode, Section } from "./api";
+import { reasonCodeLabels } from "./approvalData";
 import {
   createInstructorGradebookWorkflow,
 } from "./instructorGradebookWorkflow";
@@ -13,7 +14,13 @@ interface ScoreCellProps {
   released: boolean;
   disabled: boolean;
   error: string;
-  onSave: (assessmentId: number, studentId: number, points: number, reason: string) => Promise<boolean>;
+  onSave: (
+    assessmentId: number,
+    studentId: number,
+    points: number,
+    reasonCode: CorrectionReasonCode,
+    reason: string,
+  ) => Promise<boolean>;
 }
 
 interface WeightEditorProps {
@@ -69,6 +76,7 @@ const ScoreCell = memo(function ScoreCell({
   onSave,
 }: ScoreCellProps) {
   const [points, setPoints] = useState(score === undefined ? "" : String(score));
+  const [reasonCode, setReasonCode] = useState<CorrectionReasonCode>("grading_error");
   const [reason, setReason] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -84,6 +92,7 @@ const ScoreCell = memo(function ScoreCell({
         assessment.id,
         studentId,
         Number(points),
+        reasonCode,
         reason,
       );
       if (saved) setReason("");
@@ -109,15 +118,36 @@ const ScoreCell = memo(function ScoreCell({
         required
       />
       {released && (
-        <input
-          aria-label="Correction reason"
-          placeholder="Reason for correction"
-          value={reason}
-          disabled={disabled}
-          onChange={(event) => setReason(event.target.value)}
-          minLength={8}
-          required
-        />
+        <>
+          <label
+            className="visually-hidden"
+            htmlFor={`reason-code-${assessment.id}-${studentId}`}
+          >
+            Correction reason code for {assessment.title} and student {studentId}
+          </label>
+          <select
+            id={`reason-code-${assessment.id}-${studentId}`}
+            aria-label="Correction reason code"
+            value={reasonCode}
+            disabled={disabled}
+            onChange={(event) =>
+              setReasonCode(event.target.value as CorrectionReasonCode)
+            }
+          >
+            {Object.entries(reasonCodeLabels).map(([code, label]) => (
+              <option key={code} value={code}>{label}</option>
+            ))}
+          </select>
+          <input
+            aria-label="Correction reason"
+            placeholder="Reason for correction"
+            value={reason}
+            disabled={disabled}
+            onChange={(event) => setReason(event.target.value)}
+            minLength={8}
+            required
+          />
+        </>
       )}
       <button className="text-button" type="submit" disabled={saving || disabled}>
         {saving ? "Saving..." : released ? "Correct" : "Save"}
@@ -565,9 +595,9 @@ export default function InstructorDashboard() {
             <div className="panel-title-row">
               <div>
                 <p className="eyebrow">ACCOUNTABILITY</p>
-                <h2>Grade corrections</h2>
+                <h2>Grade changes</h2>
               </div>
-              <span className="term-pill">{corrections.length} corrections</span>
+              <span className="term-pill">{corrections.length} requests and corrections</span>
             </div>
             {corrections.length > 0 ? (
               <div
@@ -584,6 +614,7 @@ export default function InstructorDashboard() {
                       <th scope="col">Points</th>
                       <th scope="col">Course grade</th>
                       <th scope="col">Changed by</th>
+                      <th scope="col">Status</th>
                       <th scope="col">Reason</th>
                       <th scope="col">When</th>
                     </tr>
@@ -600,6 +631,14 @@ export default function InstructorDashboard() {
                           {correction.new_percentage}% {correction.new_letter_grade}
                         </td>
                         <td>{correction.changed_by_name}</td>
+                        <td>
+                          <span className={`review-badge review-badge--${correction.status}`}>
+                            {correction.status === "pending"
+                              ? "Awaiting approval"
+                              : correction.status}
+                          </span>
+                          <small>{reasonCodeLabels[correction.reason_code]}</small>
+                        </td>
                         <td>{correction.reason}</td>
                         <td>{correctionTimes.get(correction.id) ?? ""}</td>
                       </tr>

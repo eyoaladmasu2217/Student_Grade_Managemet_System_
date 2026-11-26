@@ -20,6 +20,7 @@ from app.grade_scale import router as grade_scale_router
 from app.releases import router as releases_router
 from app.scores import router as scores_router
 from app.security_headers import add_security_headers
+from app.simulation import router as simulation_router
 from app.users import router as users_router
 
 
@@ -84,6 +85,7 @@ def create_app() -> FastAPI:
     api.include_router(grade_scale_router)
     api.include_router(releases_router)
     api.include_router(corrections_router)
+    api.include_router(simulation_router)
 
     @api.get("/api/health", tags=["health"])
     def health_check() -> dict[str, str]:

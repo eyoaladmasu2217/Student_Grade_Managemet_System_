@@ -107,7 +107,11 @@ def test_cannot_correct_withdrawn_students_grade(released_withdrawn_grade) -> No
 
     response = client.put(
         f"/api/assessments/{assessment_id}/scores/{student_id}/correction",
-        json={"points": 80, "reason": "Correcting a withdrawn student's score"},
+        json={
+            "points": 80,
+            "reason_code": "grading_error",
+            "reason": "Correcting a withdrawn student's score",
+        },
     )
 
     assert response.status_code == 404

@@ -907,9 +907,17 @@ def test_released_grade_correction_updates_result_and_records_audit(
         f"/api/assessments/{assessment_id}/scores/{student_id}",
         json={"points": 80},
     )
+    client.post(
+        "/api/auth/login",
+        json={"email": "admin@example.edu", "password": "a-secure-password"},
+    )
     correction_response = client.put(
         f"/api/assessments/{assessment_id}/scores/{student_id}/correction",
-        json={"points": 80, "reason": "The original score was entered incorrectly"},
+        json={
+            "points": 80,
+            "reason_code": "grading_error",
+            "reason": "The original score was entered incorrectly",
+        },
     )
     history_response = client.get(f"/api/sections/{section_id}/corrections")
     client.post(

@@ -30,7 +30,11 @@ The command prompts for a password and requires at least 12 characters. For prod
 
 The starter grade scale is `A` (90%), `B` (80%), `C` (70%), `D` (60%), and `F` (0%). An administrator can replace it through `PUT /api/grade-scale`; confirm BITS College's official thresholds before using the starter scale for academic decisions.
 
-An instructor can release grades only after every active student has a score for every assessment and category weights total 100%. Unreleased work is treated as ungraded; it does not count as zero. After release, assessment structure is locked. Corrections require a reason and are retained in the section's correction history.
+An instructor can release grades only after every active student has a score for every assessment and category weights total 100%. Unreleased work is treated as ungraded; it does not count as zero. After release, assessment structure is locked.
+
+Released-grade corrections require a reason code and an explanation. Instructor submissions create a pending request without changing the student's score; an administrator approves and applies the change or rejects it with a note. Direct administrator corrections are approved immediately. Every request, approval, and rejection is recorded in the section's append-only audit trail, and instructors can see request status in their correction history.
+
+Students can use the private What-If simulator on their dashboard to replace hypothetical scores and see the resulting weighted grade. The endpoint exposes assessment structure and grade bands but hides personal scores until grades are released. The simulator never writes grades.
 
 For deployments where the browser calls the API from a different origin, set `SGMS_FRONTEND_ORIGINS` to a comma-separated allowlist. Wildcards and relative URLs are rejected. See [.env.example](./.env.example) for every supported setting.
 
@@ -68,6 +72,7 @@ python -m pytest
 ```powershell
 cd frontend
 npm run build
+npm test -- --run
 ```
 
 Domain terms and grade concepts are documented in [GLOSSARY.md](./GLOSSARY.md).

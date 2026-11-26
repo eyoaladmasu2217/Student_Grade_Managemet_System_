@@ -201,11 +201,32 @@ def initialize_database() -> None:
                 new_letter_grade TEXT NOT NULL,
                 changed_by INTEGER NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
                 reason TEXT NOT NULL,
+                reason_code TEXT NOT NULL DEFAULT 'other',
+                status TEXT NOT NULL DEFAULT 'approved'
+                    CHECK (status IN ('pending', 'approved', 'rejected')),
+                requested_by INTEGER REFERENCES users(id) ON DELETE RESTRICT,
+                reviewed_by INTEGER REFERENCES users(id) ON DELETE RESTRICT,
+                reviewed_at TEXT,
+                review_note TEXT,
                 changed_at TEXT NOT NULL
             );
 
             CREATE INDEX IF NOT EXISTS grade_corrections_section_idx
                 ON grade_corrections(section_id, changed_at DESC);
+
+            CREATE TABLE IF NOT EXISTS grade_change_events (
+                id INTEGER PRIMARY KEY,
+                correction_id INTEGER NOT NULL
+                    REFERENCES grade_corrections(id) ON DELETE CASCADE,
+                section_id INTEGER NOT NULL REFERENCES sections(id) ON DELETE RESTRICT,
+                event TEXT NOT NULL CHECK (event IN ('requested', 'approved', 'rejected')),
+                actor_id INTEGER NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+                note TEXT NOT NULL DEFAULT '',
+                occurred_at TEXT NOT NULL
+            );
+
+            CREATE INDEX IF NOT EXISTS grade_change_events_section_idx
+                ON grade_change_events(section_id, occurred_at DESC);
             """
         )
         session_columns = {
@@ -213,6 +234,36 @@ def initialize_database() -> None:
         }
         if "last_seen_at" not in session_columns:
             connection.execute("ALTER TABLE sessions ADD COLUMN last_seen_at TEXT")
+
+        correction_columns = {
+            row["name"] for row in connection.execute("PRAGMA table_info(grade_corrections)")
+        }
+        if "reason_code" not in correction_columns:
+            connection.execute(
+                "ALTER TABLE grade_corrections "
+                "ADD COLUMN reason_code TEXT NOT NULL DEFAULT 'other'"
+            )
+        if "status" not in correction_columns:
+            connection.execute(
+                "ALTER TABLE grade_corrections "
+                "ADD COLUMN status TEXT NOT NULL DEFAULT 'approved'"
+            )
+        if "requested_by" not in correction_columns:
+            connection.execute(
+                "ALTER TABLE grade_corrections ADD COLUMN requested_by INTEGER"
+            )
+        if "reviewed_by" not in correction_columns:
+            connection.execute(
+                "ALTER TABLE grade_corrections ADD COLUMN reviewed_by INTEGER"
+            )
+        if "reviewed_at" not in correction_columns:
+            connection.execute("ALTER TABLE grade_corrections ADD COLUMN reviewed_at TEXT")
+        if "review_note" not in correction_columns:
+            connection.execute("ALTER TABLE grade_corrections ADD COLUMN review_note TEXT")
+        connection.execute(
+            "CREATE INDEX IF NOT EXISTS grade_corrections_status_idx "
+            "ON grade_corrections(status, changed_at DESC)"
+        )
 
         connection.executemany(
             """
