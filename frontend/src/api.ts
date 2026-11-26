@@ -134,6 +134,15 @@ export interface WhatIfSimulation {
   grade_bands: GradeBand[];
 }
 
+export type CorrectionReasonCode =
+  | "grading_error"
+  | "misgraded_work"
+  | "data_entry"
+  | "retake"
+  | "other";
+
+export type GradeChangeStatus = "pending" | "approved" | "rejected";
+
 export interface GradeCorrection {
   id: number;
   section_id: number;
@@ -150,7 +159,25 @@ export interface GradeCorrection {
   changed_by: number;
   changed_by_name: string;
   reason: string;
+  reason_code: CorrectionReasonCode;
+  status: GradeChangeStatus;
+  requested_by: number;
+  requested_by_name: string;
+  reviewed_by: number | null;
+  reviewed_by_name: string | null;
+  reviewed_at: string | null;
+  review_note: string | null;
   changed_at: string;
+}
+
+export interface GradeChangeEvent {
+  id: number;
+  correction_id: number;
+  event: "requested" | "approved" | "rejected";
+  actor_id: number;
+  actor_name: string;
+  note: string;
+  occurred_at: string;
 }
 
 export class ApiError extends Error {
