@@ -77,6 +77,41 @@ def calculate_grade_for_student(
     return _summary_from(categories)
 
 
+def calculate_grade_with_score(
+    connection: sqlite3.Connection,
+    section_id: int,
+    student_id: int,
+    assessment_id: int,
+    points: float,
+) -> GradeSummary:
+    categories = connection.execute(
+        """
+        SELECT assessment_categories.weight,
+               COUNT(assessments.id) AS assessment_count,
+               SUM(CASE WHEN assessment_scores.id IS NOT NULL OR assessments.id = ?
+                   THEN 1 ELSE 0 END) AS scored_count,
+               COALESCE(SUM(CASE
+                   WHEN assessment_scores.id IS NOT NULL OR assessments.id = ?
+                   THEN assessments.max_points ELSE 0 END), 0) AS scored_max_points,
+               COALESCE(SUM(CASE
+                   WHEN assessment_scores.id IS NOT NULL OR assessments.id = ?
+                   THEN CASE WHEN assessments.id = ? THEN ?
+                       ELSE assessment_scores.points END
+                   ELSE 0 END), 0) AS earned_points
+        FROM assessment_categories
+        LEFT JOIN assessments
+            ON assessments.category_id = assessment_categories.id
+        LEFT JOIN assessment_scores
+            ON assessment_scores.assessment_id = assessments.id
+            AND assessment_scores.student_id = ?
+        WHERE assessment_categories.section_id = ?
+        GROUP BY assessment_categories.id
+        """,
+        (assessment_id, assessment_id, assessment_id, assessment_id, points, student_id, section_id),
+    ).fetchall()
+    return _summary_from(categories)
+
+
 def load_scores_for_students(
     connection: sqlite3.Connection,
     section_id: int,
