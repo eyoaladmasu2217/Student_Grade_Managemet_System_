@@ -51,3 +51,18 @@ The instructor's action that makes course grades visible to enrolled students.
 
 **Grade correction**:
 A change to a previously released grade that retains the prior value and correction history.
+
+**What-if simulation**:
+A private, read-only calculation that shows how hypothetical assessment scores would change a student's course grade. A simulation never writes an assessment score.
+
+**Grade change request**:
+A proposed correction to a released grade. An instructor submits a request; an academic administrator reviews it before the score changes. A request records a reason code, an explanation, the requester, and the submission time.
+
+**Reason code**:
+A controlled category describing why a grade change was requested, such as a grading error, misgraded work, a data-entry mistake, or a retake.
+
+**Grade change approval**:
+An academic administrator's decision to apply or reject a grade change request, recorded with the reviewer and decision time.
+
+**Audit event**:
+An immutable record of a grade change transition (request, approval, or rejection) with its actor and timestamp. Audit events are append-only and are kept separately from the current state of a request.
