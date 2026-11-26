@@ -214,9 +214,6 @@ def initialize_database() -> None:
             CREATE INDEX IF NOT EXISTS grade_corrections_section_idx
                 ON grade_corrections(section_id, changed_at DESC);
 
-            CREATE INDEX IF NOT EXISTS grade_corrections_status_idx
-                ON grade_corrections(status, changed_at DESC);
-
             CREATE TABLE IF NOT EXISTS grade_change_events (
                 id INTEGER PRIMARY KEY,
                 correction_id INTEGER NOT NULL
@@ -263,6 +260,10 @@ def initialize_database() -> None:
             connection.execute("ALTER TABLE grade_corrections ADD COLUMN reviewed_at TEXT")
         if "review_note" not in correction_columns:
             connection.execute("ALTER TABLE grade_corrections ADD COLUMN review_note TEXT")
+        connection.execute(
+            "CREATE INDEX IF NOT EXISTS grade_corrections_status_idx "
+            "ON grade_corrections(status, changed_at DESC)"
+        )
 
         connection.executemany(
             """
