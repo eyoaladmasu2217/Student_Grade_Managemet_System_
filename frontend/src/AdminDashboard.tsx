@@ -1,10 +1,16 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { apiRequest, GradeBand, jsonBody } from "./api";
+import { apiRequest, CorrectionReasonCode, GradeBand, jsonBody } from "./api";
 import {
   AdminRefreshScope,
   emptyAdminData,
   loadAdminData,
 } from "./adminData";
+import {
+  ApprovalData,
+  loadApprovalData,
+  reasonCodeLabels,
+  reviewGradeChange,
+} from "./approvalData";
 
 function messageOf(error: unknown): string {
   return error instanceof Error ? error.message : "The request could not be completed.";
@@ -21,6 +27,14 @@ export default function AdminDashboard() {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [working, setWorking] = useState(false);
+  const [approvalData, setApprovalData] = useState<ApprovalData>({
+    requests: [],
+    auditTrail: [],
+  });
+  const [approvalLoading, setApprovalLoading] = useState(false);
+  const [approvalError, setApprovalError] = useState("");
+  const [reviewNotes, setReviewNotes] = useState<Record<number, string>>({});
+  const [reviewing, setReviewing] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -48,6 +62,25 @@ export default function AdminDashboard() {
       active = false;
     };
   }, [refresh]);
+
+  useEffect(() => {
+    let active = true;
+    setApprovalLoading(true);
+    setApprovalError("");
+    loadApprovalData(data.sections)
+      .then((result) => {
+        if (active) setApprovalData(result);
+      })
+      .catch((loadError: unknown) => {
+        if (active) setApprovalError(messageOf(loadError));
+      })
+      .finally(() => {
+        if (active) setApprovalLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [data.sections, refresh]);
 
   async function save(
     event: FormEvent<HTMLFormElement>,
@@ -204,6 +237,44 @@ export default function AdminDashboard() {
     }));
   }
 
+  async function review(
+    correctionId: number,
+    decision: "approve" | "reject",
+  ) {
+    const note = (reviewNotes[correctionId] ?? "").trim();
+    if (decision === "reject" && note.length < 8) {
+      setError("Enter a rejection note of at least 8 characters.");
+      return;
+    }
+    setError("");
+    setMessage("");
+    setReviewing(true);
+    try {
+      await reviewGradeChange(correctionId, decision, note);
+      setApprovalData(await loadApprovalData(data.sections));
+      setReviewNotes((current) => ({ ...current, [correctionId]: "" }));
+      setMessage(
+        decision === "approve"
+          ? "Grade change approved and applied."
+          : "Grade change request rejected.",
+      );
+    } catch (reviewError) {
+      setError(messageOf(reviewError));
+    } finally {
+      setReviewing(false);
+    }
+  }
+
+  const sectionLabels = useMemo(
+    () =>
+      new Map(
+        data.sections.map((section) => [
+          section.id,
+          `${section.course_code} · Section ${section.section_code}`,
+        ]),
+      ),
+    [data.sections],
+  );
   const students = useMemo(
     () => data.users.filter((user) => user.role === "student"),
     [data.users],
@@ -569,6 +640,113 @@ export default function AdminDashboard() {
               <button className="primary-button" disabled={working}>Save grade scale</button>
             </div>
           </form>
+        </article>
+
+        <article className="panel">
+          <div className="panel-title-row">
+            <div>
+              <p className="eyebrow">APPROVAL QUEUE</p>
+              <h2>Grade change requests</h2>
+            </div>
+            <span className="term-pill">{approvalData.requests.length} pending</span>
+          </div>
+          <p className="panel-note">
+            Instructor corrections stay pending until an academic administrator approves them.
+          </p>
+          {approvalError && <p className="form-error" role="alert">{approvalError}</p>}
+          {approvalLoading ? (
+            <p className="panel-note" role="status" aria-live="polite">
+              Loading grade change requests...
+            </p>
+          ) : approvalData.requests.length === 0 ? (
+            <p className="empty-state">No grade changes are waiting for review.</p>
+          ) : (
+            <ul className="review-list">
+              {approvalData.requests.map((request) => (
+                <li key={request.id}>
+                  <div className="review-request-heading">
+                    <strong>{request.student_name}</strong>
+                    <span>{sectionLabels.get(request.section_id) ?? `Section ${request.section_id}`}</span>
+                  </div>
+                  <p>
+                    {request.assessment_title}: {request.previous_points} →{" "}
+                    <strong>{request.new_points}</strong> points ·{" "}
+                    {request.previous_percentage}% {request.previous_letter_grade} →{" "}
+                    {request.new_percentage}% {request.new_letter_grade}
+                  </p>
+                  <p className="review-reason">
+                    {reasonCodeLabels[request.reason_code as CorrectionReasonCode]} ·{" "}
+                    {request.reason}
+                  </p>
+                  <p className="panel-note">
+                    Requested by {request.requested_by_name} on{" "}
+                    {new Date(request.changed_at).toLocaleString()}
+                  </p>
+                  <label>
+                    Review note
+                    <textarea
+                      rows={2}
+                      maxLength={1000}
+                      value={reviewNotes[request.id] ?? ""}
+                      placeholder="Explain an approval or rejection"
+                      onChange={(event) =>
+                        setReviewNotes((current) => ({
+                          ...current,
+                          [request.id]: event.target.value,
+                        }))
+                      }
+                    />
+                  </label>
+                  <div className="button-row">
+                    <button
+                      className="primary-button"
+                      type="button"
+                      disabled={reviewing}
+                      onClick={() => void review(request.id, "approve")}
+                    >
+                      Approve and apply
+                    </button>
+                    <button
+                      className="secondary-button"
+                      type="button"
+                      disabled={reviewing}
+                      onClick={() => void review(request.id, "reject")}
+                    >
+                      Reject request
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </article>
+
+        <article className="panel">
+          <div className="panel-title-row">
+            <div>
+              <p className="eyebrow">ACCOUNTABILITY</p>
+              <h2>Grade change audit trail</h2>
+            </div>
+            <span className="term-pill">{approvalData.auditTrail.length} events</span>
+          </div>
+          {approvalData.auditTrail.length === 0 ? (
+            <p className="empty-state">No grade change events have been recorded yet.</p>
+          ) : (
+            <ol className="audit-list">
+              {approvalData.auditTrail.slice(0, 20).map((event) => (
+                <li key={event.id}>
+                  <span className={`review-badge review-badge--${event.event}`}>
+                    {event.event}
+                  </span>
+                  <div>
+                    <strong>{event.actor_name}</strong> ·{" "}
+                    {new Date(event.occurred_at).toLocaleString()}
+                    <p>{event.note || "No note recorded."}</p>
+                  </div>
+                </li>
+              ))}
+            </ol>
+          )}
         </article>
         </div>
       )}
