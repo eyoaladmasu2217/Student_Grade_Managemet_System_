@@ -122,7 +122,11 @@ def test_correction_authorization_runs_inside_write_transaction(
 
     response = client.put(
         f"/api/assessments/{assessment_id}/scores/{student_id}/correction",
-        json={"points": 80, "reason": "Correcting the recorded score"},
+        json={
+            "points": 80,
+            "reason_code": "grading_error",
+            "reason": "Correcting the recorded score",
+        },
     )
 
     assert response.status_code == 200
