@@ -393,8 +393,11 @@ def approve_grade_change(
 
     assessment = connection.execute(
         """
-        SELECT assessments.id, assessments.section_id, assessments.max_points
-        FROM assessments WHERE assessments.id = ?
+        SELECT assessments.id, assessment_categories.section_id, assessments.max_points
+        FROM assessments
+        JOIN assessment_categories
+            ON assessment_categories.id = assessments.category_id
+        WHERE assessments.id = ?
         """,
         (row["assessment_id"],),
     ).fetchone()
