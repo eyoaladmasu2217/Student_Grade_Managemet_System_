@@ -14,6 +14,7 @@ class LoginThrottle:
     def __init__(self) -> None:
         self._lock = threading.Lock()
         self._accounts: dict[tuple[str, str], list[float]] = defaultdict(list)
+        self._global_accounts: dict[str, list[float]] = defaultdict(list)
         self._addresses: dict[str, list[float]] = defaultdict(list)
         self._last_sweep = time.monotonic()
 
@@ -33,21 +34,32 @@ class LoginThrottle:
             return
         self._last_sweep = now
         self._accounts = defaultdict(list, self._live_entries(self._accounts, now))
+        self._global_accounts = defaultdict(
+            list, self._live_entries(self._global_accounts, now)
+        )
         self._addresses = defaultdict(list, self._live_entries(self._addresses, now))
 
     def retry_after(self, email: str, address: str) -> int | None:
         now = time.monotonic()
-        account_key = (email.casefold(), address)
+        normalized_email = email.casefold()
+        account_key = (normalized_email, address)
         with self._lock:
             self._sweep(now)
             account = self._recent(self._accounts[account_key], now)
+            account_anywhere = self._recent(self._global_accounts[normalized_email], now)
             address_attempts = self._recent(self._addresses[address], now)
             self._accounts[account_key] = account
+            self._global_accounts[normalized_email] = account_anywhere
             self._addresses[address] = address_attempts
+            blockers: list[float] = []
             if len(account) >= MAX_FAILURES_PER_ACCOUNT:
-                return self._seconds_left(account[0], now)
+                blockers.append(account[0])
+            if len(account_anywhere) >= MAX_FAILURES_PER_ACCOUNT:
+                blockers.append(account_anywhere[0])
             if len(address_attempts) >= MAX_FAILURES_PER_ADDRESS:
-                return self._seconds_left(address_attempts[0], now)
+                blockers.append(address_attempts[0])
+            if blockers:
+                return self._seconds_left(min(blockers), now)
         return None
 
     @staticmethod
@@ -56,22 +68,30 @@ class LoginThrottle:
 
     def record_failure(self, email: str, address: str) -> None:
         now = time.monotonic()
-        account_key = (email.casefold(), address)
+        normalized_email = email.casefold()
+        account_key = (normalized_email, address)
         with self._lock:
             self._sweep(now)
             self._accounts[account_key] = self._recent(self._accounts[account_key], now)
+            self._global_accounts[normalized_email] = self._recent(
+                self._global_accounts[normalized_email], now
+            )
             self._addresses[address] = self._recent(self._addresses[address], now)
             self._accounts[account_key].append(now)
+            self._global_accounts[normalized_email].append(now)
             self._addresses[address].append(now)
 
     def clear(self, email: str, address: str) -> None:
-        account_key = (email.casefold(), address)
+        normalized_email = email.casefold()
         with self._lock:
-            self._accounts.pop(account_key, None)
+            for key in [key for key in self._accounts if key[0] == normalized_email]:
+                self._accounts.pop(key, None)
+            self._global_accounts.pop(normalized_email, None)
 
     def reset(self) -> None:
         with self._lock:
             self._accounts.clear()
+            self._global_accounts.clear()
             self._addresses.clear()
 
 

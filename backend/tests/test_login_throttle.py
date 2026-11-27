@@ -45,12 +45,14 @@ def test_expired_throttle_keys_are_swept() -> None:
     guard = LoginThrottle()
     old = time.monotonic() - WINDOW_SECONDS - 1
     guard._accounts[("old@example.edu", "old-address")] = [old]
+    guard._global_accounts["old@example.edu"] = [old]
     guard._addresses["old-address"] = [old]
     guard._last_sweep = 0.0
 
     guard.retry_after("new@example.edu", "new-address")
 
     assert ("old@example.edu", "old-address") not in guard._accounts
+    assert "old@example.edu" not in guard._global_accounts
     assert "old-address" not in guard._addresses
 
 
@@ -80,6 +82,39 @@ def test_correct_credentials_clear_the_failure_count(client: TestClient) -> None
     for _ in range(MAX_FAILURES_PER_ACCOUNT - 1):
         attempt(client, EMAIL, "wrong-password")
 
+    assert attempt(client, EMAIL, PASSWORD).status_code == 200
+    for _ in range(MAX_FAILURES_PER_ACCOUNT - 1):
+        assert attempt(client, EMAIL, "wrong-password").status_code == 401
+    assert attempt(client, EMAIL, PASSWORD).status_code == 200
+
+
+def test_failures_from_different_addresses_lock_the_account(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    addresses = iter(f"address-{index}" for index in range(MAX_FAILURES_PER_ACCOUNT + 1))
+    monkeypatch.setattr("app.auth.client_address", lambda _: next(addresses))
+
+    for _ in range(MAX_FAILURES_PER_ACCOUNT):
+        assert attempt(client, EMAIL, "wrong-password").status_code == 401
+
+    blocked = attempt(client, EMAIL, PASSWORD)
+    assert blocked.status_code == 429
+    assert int(blocked.headers["retry-after"]) >= 1
+
+
+def test_success_from_another_address_clears_global_failures(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    addresses = iter(
+        ["address-one"] * (MAX_FAILURES_PER_ACCOUNT - 1)
+        + ["address-two"]
+        + ["address-one"] * (MAX_FAILURES_PER_ACCOUNT - 1)
+        + ["address-two"]
+    )
+    monkeypatch.setattr("app.auth.client_address", lambda _: next(addresses))
+
+    for _ in range(MAX_FAILURES_PER_ACCOUNT - 1):
+        assert attempt(client, EMAIL, "wrong-password").status_code == 401
     assert attempt(client, EMAIL, PASSWORD).status_code == 200
     for _ in range(MAX_FAILURES_PER_ACCOUNT - 1):
         assert attempt(client, EMAIL, "wrong-password").status_code == 401
