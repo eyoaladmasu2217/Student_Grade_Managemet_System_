@@ -1,9 +1,12 @@
+import logging
 import os
 import sqlite3
 from collections.abc import Iterator
 from contextlib import closing
 from datetime import datetime, timezone
 from pathlib import Path
+
+logger = logging.getLogger("sgms.security")
 
 DATABASE_PATH = Path(
     os.getenv(
@@ -13,9 +16,22 @@ DATABASE_PATH = Path(
 )
 
 
+def _restrict_permissions(path: Path, mode: int) -> None:
+    try:
+        os.chmod(path, mode)
+    except OSError as error:
+        logger.warning("Could not restrict permissions on %s: %s", path.name, error)
+
+
 def connect() -> sqlite3.Connection:
     DATABASE_PATH.parent.mkdir(parents=True, exist_ok=True)
+    _restrict_permissions(DATABASE_PATH.parent, 0o700)
     connection = sqlite3.connect(DATABASE_PATH, timeout=10, check_same_thread=False)
+    _restrict_permissions(DATABASE_PATH, 0o600)
+    for suffix in ("-wal", "-shm"):
+        sidecar = Path(str(DATABASE_PATH) + suffix)
+        if sidecar.exists():
+            _restrict_permissions(sidecar, 0o600)
     connection.row_factory = sqlite3.Row
     connection.execute("PRAGMA foreign_keys = ON")
     connection.execute("PRAGMA journal_mode = WAL")
@@ -227,6 +243,18 @@ def initialize_database() -> None:
 
             CREATE INDEX IF NOT EXISTS grade_change_events_section_idx
                 ON grade_change_events(section_id, occurred_at DESC);
+
+            CREATE TRIGGER IF NOT EXISTS grade_change_events_no_update
+            BEFORE UPDATE ON grade_change_events
+            BEGIN
+                SELECT RAISE(ABORT, 'grade change events are immutable');
+            END;
+
+            CREATE TRIGGER IF NOT EXISTS grade_change_events_no_delete
+            BEFORE DELETE ON grade_change_events
+            BEGIN
+                SELECT RAISE(ABORT, 'grade change events are immutable');
+            END;
             """
         )
         session_columns = {

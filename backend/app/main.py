@@ -18,6 +18,7 @@ from app.enrollments import router as enrollments_router
 from app.gradebook import router as gradebook_router
 from app.grade_scale import router as grade_scale_router
 from app.releases import router as releases_router
+from app.request_limits import limit_request_body, max_request_bytes
 from app.scores import router as scores_router
 from app.security_headers import add_security_headers
 from app.simulation import router as simulation_router
@@ -63,7 +64,9 @@ def create_app() -> FastAPI:
 
     api.add_exception_handler(RequestValidationError, handle_validation_error)
     api.state.allowed_origins = frozenset(origins)
+    api.state.max_request_bytes = max_request_bytes()
 
+    api.middleware("http")(limit_request_body)
     api.add_middleware(
         CORSMiddleware,
         allow_origins=origins,
@@ -71,8 +74,8 @@ def create_app() -> FastAPI:
         allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
         allow_headers=["Authorization", "Content-Type", "X-Requested-With"],
     )
-    api.middleware("http")(add_security_headers)
     api.middleware("http")(validate_request_origin)
+    api.middleware("http")(add_security_headers)
 
     api.include_router(auth_router)
     api.include_router(academic_router)

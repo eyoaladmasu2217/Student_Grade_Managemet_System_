@@ -23,6 +23,7 @@ SESSION_COOKIE = "sgms_session"
 SESSION_DURATION = timedelta(hours=12)
 SESSION_IDLE_TIMEOUT = timedelta(hours=2)
 ACTIVITY_WRITE_INTERVAL = timedelta(minutes=1)
+MAX_SESSION_TOKEN_LENGTH = 256
 
 
 def parse_timestamp(value: str) -> datetime:
@@ -66,6 +67,16 @@ class ChangePasswordRequest(BaseModel):
         return validate_password(value)
 
 
+def session_token_from_request(request: Request) -> str | None:
+    token = request.cookies.get(SESSION_COOKIE)
+    if token is None:
+        return None
+    if len(token) > MAX_SESSION_TOKEN_LENGTH:
+        log_security_event("session", "failure", reason="oversized_token")
+        return None
+    return token
+
+
 class UserResponse(BaseModel):
     id: int
     email: str
@@ -78,7 +89,7 @@ def get_current_user(
     request: Request,
     connection: Annotated[sqlite3.Connection, Depends(get_db)],
 ) -> sqlite3.Row:
-    token = request.cookies.get(SESSION_COOKIE)
+    token = session_token_from_request(request)
     if not token:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Sign in required")
 
@@ -115,9 +126,18 @@ def get_current_user(
 
 def require_roles(*roles: str):
     def role_guard(
+        request: Request,
         user: Annotated[sqlite3.Row, Depends(get_current_user)],
     ) -> sqlite3.Row:
         if user["role"] not in roles:
+            log_security_event(
+                "authorization",
+                "failure",
+                user_id=user["id"],
+                role=user["role"],
+                required="|".join(roles),
+                path=request.url.path,
+            )
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Insufficient permissions")
         return user
 
@@ -166,6 +186,13 @@ def login(
     log_security_event(
         "login", "success", email=email, user_id=user["id"], address=address
     )
+    previous_token = session_token_from_request(request)
+    if previous_token:
+        connection.execute(
+            "DELETE FROM sessions WHERE token_hash = ?",
+            (hash_session_token(previous_token),),
+        )
+        log_security_event("session_rotation", "success", user_id=user["id"])
     token = create_session_token()
     expires_at = datetime.now(timezone.utc) + SESSION_DURATION
     connection.execute(
@@ -202,7 +229,7 @@ def logout(
     response: Response,
     connection: Annotated[sqlite3.Connection, Depends(get_db)],
 ) -> None:
-    token = request.cookies.get(SESSION_COOKIE)
+    token = session_token_from_request(request)
     if token:
         connection.execute(
             "DELETE FROM sessions WHERE token_hash = ?",

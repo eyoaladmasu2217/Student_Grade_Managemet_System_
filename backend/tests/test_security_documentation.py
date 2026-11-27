@@ -24,3 +24,18 @@ def test_security_workflow_is_present() -> None:
     assert "bandit" in workflow
     assert "pip-audit" in workflow
     assert "npm audit" in workflow
+    assert "npm test" in workflow
+    assert "npm ci" in workflow
+
+
+def test_frontend_does_not_load_third_party_fonts() -> None:
+    html = (ROOT / "frontend" / "index.html").read_text(encoding="utf-8")
+
+    assert "fonts.googleapis.com" not in html
+    assert "fonts.gstatic.com" not in html
+
+
+def test_frontend_dependencies_are_locked() -> None:
+    lockfile = ROOT / "frontend" / "package-lock.json"
+
+    assert lockfile.is_file()
