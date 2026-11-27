@@ -24,3 +24,4 @@ def test_security_workflow_is_present() -> None:
     assert "bandit" in workflow
     assert "pip-audit" in workflow
     assert "npm audit" in workflow
+    assert "npm test" in workflow
