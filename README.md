@@ -4,7 +4,7 @@ A single-institution grade management system for BITS College. The project is bu
 
 ## Requirements
 
-- Node.js 20+
+- Node.js 20.19+ or 22.12+
 - Python 3.11+
 
 ## Run the API
