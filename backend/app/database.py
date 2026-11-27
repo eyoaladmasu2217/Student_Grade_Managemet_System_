@@ -227,6 +227,18 @@ def initialize_database() -> None:
 
             CREATE INDEX IF NOT EXISTS grade_change_events_section_idx
                 ON grade_change_events(section_id, occurred_at DESC);
+
+            CREATE TRIGGER IF NOT EXISTS grade_change_events_no_update
+            BEFORE UPDATE ON grade_change_events
+            BEGIN
+                SELECT RAISE(ABORT, 'grade change events are immutable');
+            END;
+
+            CREATE TRIGGER IF NOT EXISTS grade_change_events_no_delete
+            BEFORE DELETE ON grade_change_events
+            BEGIN
+                SELECT RAISE(ABORT, 'grade change events are immutable');
+            END;
             """
         )
         session_columns = {
