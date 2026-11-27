@@ -26,6 +26,9 @@ def test_responses_include_security_headers(client: TestClient) -> None:
     assert response.status_code == 200
     for name, value in SECURITY_HEADERS.items():
         assert response.headers[name] == value
+    assert response.headers["cross-origin-opener-policy"] == "same-origin"
+    assert response.headers["cross-origin-resource-policy"] == "same-origin"
+    assert response.headers["x-permitted-cross-domain-policies"] == "none"
 
 
 def test_hsts_is_only_added_for_https_requests(client: TestClient) -> None:

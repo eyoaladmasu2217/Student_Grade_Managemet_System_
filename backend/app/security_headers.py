@@ -10,6 +10,10 @@ SECURITY_HEADERS = {
         "form-action 'self'; object-src 'none'"
     ),
     "Permissions-Policy": "geolocation=(), microphone=(), camera=()",
+    "Cross-Origin-Opener-Policy": "same-origin",
+    "Cross-Origin-Resource-Policy": "same-origin",
+    "X-Permitted-Cross-Domain-Policies": "none",
+    "Origin-Agent-Cluster": "?1",
     "Cache-Control": "no-store",
 }
 
