@@ -115,9 +115,18 @@ def get_current_user(
 
 def require_roles(*roles: str):
     def role_guard(
+        request: Request,
         user: Annotated[sqlite3.Row, Depends(get_current_user)],
     ) -> sqlite3.Row:
         if user["role"] not in roles:
+            log_security_event(
+                "authorization",
+                "failure",
+                user_id=user["id"],
+                role=user["role"],
+                required="|".join(roles),
+                path=request.url.path,
+            )
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Insufficient permissions")
         return user
 

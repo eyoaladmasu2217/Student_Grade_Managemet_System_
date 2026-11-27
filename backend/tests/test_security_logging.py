@@ -75,6 +75,34 @@ def test_admin_user_creation_is_logged(client: TestClient, caplog: pytest.LogCap
     assert all("another-secure-password" not in message for message in messages)
 
 
+def test_blocked_cross_origin_write_is_logged(
+    client: TestClient, caplog: pytest.LogCaptureFixture
+) -> None:
+    with caplog.at_level(logging.WARNING, logger="sgms.security"):
+        response = client.post(
+            "/api/auth/login",
+            json={"email": "admin@example.edu", "password": PASSWORD},
+            headers={"origin": "https://attacker.example"},
+        )
+
+    assert response.status_code == 403
+    assert any("event=csrf outcome=failure" in message for message in security_messages(caplog))
+
+
+def test_authorization_denial_is_logged(
+    client: TestClient, caplog: pytest.LogCaptureFixture
+) -> None:
+    client.post("/api/auth/login", json={"email": "admin@example.edu", "password": PASSWORD})
+
+    with caplog.at_level(logging.WARNING, logger="sgms.security"):
+        response = client.get("/api/enrollments/mine")
+
+    assert response.status_code == 403
+    assert any(
+        "event=authorization outcome=failure" in message for message in security_messages(caplog)
+    )
+
+
 def test_log_details_are_single_line(caplog: pytest.LogCaptureFixture) -> None:
     with caplog.at_level(logging.INFO, logger="sgms.security"):
         log_security_event("test_event", "success", detail="first\nsecond")
