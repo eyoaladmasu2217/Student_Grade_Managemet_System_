@@ -28,7 +28,7 @@
   --gradient-brand: linear-gradient(135deg, #4f6df6 0%, #7a5cf0 52%, #4f9bf6 100%);
   --gradient-brand-soft: linear-gradient(135deg, #eef3ff 0%, #f5f0ff 100%);
   --focus-ring: 0 0 0 4px rgba(79, 109, 246, 0.2);
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter",
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display",
     "Segoe UI", Arial, sans-serif;
   color: var(--color-ink);
   background: #f8f9fd;
