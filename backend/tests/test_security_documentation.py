@@ -25,3 +25,10 @@ def test_security_workflow_is_present() -> None:
     assert "pip-audit" in workflow
     assert "npm audit" in workflow
     assert "npm test" in workflow
+    assert "npm ci" in workflow
+
+
+def test_frontend_dependencies_are_locked() -> None:
+    lockfile = ROOT / "frontend" / "package-lock.json"
+
+    assert lockfile.is_file()
