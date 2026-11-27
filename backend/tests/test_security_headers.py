@@ -2,6 +2,8 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
+from app import database
+from app.main import create_app
 from app.security_headers import HSTS_VALUE, SECURITY_HEADERS, add_security_headers
 
 
@@ -33,3 +35,21 @@ def test_hsts_is_only_added_for_https_requests(client: TestClient) -> None:
     response = https_client.get("/ping")
 
     assert response.headers["strict-transport-security"] == HSTS_VALUE
+
+
+def test_csrf_rejections_still_get_security_headers(
+    tmp_path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("SGMS_FRONTEND_ORIGINS", "https://grades.example.edu")
+    monkeypatch.setattr(database, "DATABASE_PATH", tmp_path / "test.sqlite3")
+
+    with TestClient(create_app()) as client:
+        response = client.post(
+            "/api/auth/login",
+            json={"email": "nobody@example.edu", "password": "wrong-password"},
+            headers={"origin": "https://attacker.example"},
+        )
+
+    assert response.status_code == 403
+    for name, value in SECURITY_HEADERS.items():
+        assert response.headers.get(name) == value

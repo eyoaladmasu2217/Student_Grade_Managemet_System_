@@ -71,8 +71,8 @@ def create_app() -> FastAPI:
         allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
         allow_headers=["Authorization", "Content-Type", "X-Requested-With"],
     )
-    api.middleware("http")(add_security_headers)
     api.middleware("http")(validate_request_origin)
+    api.middleware("http")(add_security_headers)
 
     api.include_router(auth_router)
     api.include_router(academic_router)
