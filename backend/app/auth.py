@@ -175,6 +175,13 @@ def login(
     log_security_event(
         "login", "success", email=email, user_id=user["id"], address=address
     )
+    previous_token = request.cookies.get(SESSION_COOKIE)
+    if previous_token:
+        connection.execute(
+            "DELETE FROM sessions WHERE token_hash = ?",
+            (hash_session_token(previous_token),),
+        )
+        log_security_event("session_rotation", "success", user_id=user["id"])
     token = create_session_token()
     expires_at = datetime.now(timezone.utc) + SESSION_DURATION
     connection.execute(
