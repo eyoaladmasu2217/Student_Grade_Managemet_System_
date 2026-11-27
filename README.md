@@ -43,11 +43,13 @@ For deployments where the browser calls the API from a different origin, set `SG
 - Set `SGMS_ENV=production`. This hides `/docs`, `/redoc`, and `/openapi.json`, and prevents `SGMS_COOKIE_SECURE=false` from taking effect.
 - Terminate HTTPS and set `SGMS_COOKIE_SECURE=true`. `SGMS_ALLOW_INSECURE_COOKIES` is intended only for local development over plain HTTP.
 - Keep `SGMS_FRONTEND_ORIGINS` as an exact allowlist. The API additionally rejects cross-site state-changing requests that carry an untrusted `Origin` or `Sec-Fetch-Site` header, and browser writes must include `X-Requested-With: XMLHttpRequest` (the frontend does this automatically).
-- Failed sign-ins are throttled per account and per client address; security events are written to the `sgms.security` logger, so configure your log collector to retain them.
-- Sessions expire after 12 hours or two hours of inactivity. Use `POST /api/auth/logout-all` to revoke every session for the current account, and `PATCH /api/users/{id}/active` to disable an account during incident response.
+- Failed sign-ins are throttled per account across all client addresses and per address; security events are written to the `sgms.security` logger, so configure your log collector to retain them.
+- Sign-in rotates the presented session token, and oversized session tokens are rejected before they are hashed. Sessions expire after 12 hours or two hours of inactivity. Use `POST /api/auth/logout-all` to revoke every session for the current account, and `PATCH /api/users/{id}/active` to disable an account during incident response.
+- Request bodies are capped by `SGMS_MAX_REQUEST_BYTES` (1 MiB by default). Rejected writes, permission denials, and oversized bodies are logged as security events.
+- Grade-change audit events are immutable at the database level, and the SQLite database directory and files are created with owner-only permissions.
 - Always create accounts with passwords of at least 12 characters that are not common, sequential, or derived from the account email.
 
-Automated checks run in `.github/workflows/security.yml` (Bandit, pip-audit, npm audit, and the test suites).
+Automated checks run in `.github/workflows/security.yml` (Bandit, pip-audit, npm audit, and the backend and frontend test suites).
 
 ## Run the frontend
 
@@ -55,7 +57,7 @@ In another terminal:
 
 ```powershell
 cd frontend
-npm install
+npm ci
 npm run dev
 ```
 
